@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { User, Mail, Phone, Edit2, Save, X } from 'lucide-react'
+import { useSession, signOut } from 'next-auth/react'
+import { User, Mail, Phone, Edit2, Save, X, ShoppingBag, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { authApi } from '@/lib/api'
 
@@ -86,6 +86,13 @@ export default function ProfilePage() {
     setError('')
   }
 
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/login', redirect: true }).catch((error) => {
+      console.error('Sign out failed, forcing redirect', error)
+      window.location.href = '/login'
+    })
+  }
+
   // Show loading while checking authentication
   if (status === 'loading' || status === 'unauthenticated' || !user) {
     return (
@@ -106,13 +113,39 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="mb-8 flex flex-col items-center gap-4"
         >
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 mb-4 text-white text-3xl font-bold">
             {user.name.charAt(0).toUpperCase()}
           </div>
           <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
           <p className="text-gray-500 mt-2">Manage your account information 🎀</p>
+
+          {/* Quick actions */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => router.push('/orders')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-kawaii',
+                'bg-white border border-pink-200 text-pink-600',
+                'shadow-sm hover:bg-pink-50 transition-all duration-200'
+              )}
+            >
+              <ShoppingBag size={16} />
+              <span className="text-sm font-semibold">My Orders</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-kawaii',
+                'bg-gradient-to-r from-pink-500 to-purple-500 text-white',
+                'shadow-kawaii hover:shadow-kawaii-hover transition-all duration-200'
+              )}
+            >
+              <LogOut size={16} />
+              <span className="text-sm font-semibold">Logout</span>
+            </button>
+          </div>
         </motion.div>
 
         {/* Profile Card */}

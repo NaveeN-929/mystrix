@@ -9,10 +9,24 @@ import { cn } from '@/lib/utils'
 import { formatPrice } from '@/lib/utils'
 import { ordersApi, Order } from '@/lib/api'
 
+// Fallback for legacy auth storage (pre-NextAuth)
+function getLegacyToken(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem('mystrix-auth')
+    if (!stored) return null
+    const parsed = JSON.parse(stored)
+    return parsed?.state?.token || parsed?.token || null
+  } catch {
+    return null
+  }
+}
+
 export default function OrdersPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  const token = session?.accessToken
+  // Support NextAuth token first; fallback to legacy localStorage token
+  const token = session?.accessToken || getLegacyToken()
   
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
@@ -20,10 +34,11 @@ export default function OrdersPage() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    // If no token from either NextAuth or legacy store, redirect
+    if (status === 'unauthenticated' && !token) {
       router.push('/login?redirect=/orders')
     }
-  }, [status, router])
+  }, [status, token, router])
 
   // Fetch user orders
   useEffect(() => {
@@ -43,13 +58,13 @@ export default function OrdersPage() {
       }
     }
 
-    if (status === 'authenticated' && token) {
+    if (token) {
       fetchOrders()
     }
   }, [status, token])
 
   // Show loading while checking authentication
-  if (status === 'loading' || status === 'unauthenticated') {
+  if (status === 'loading' || (!token && status === 'unauthenticated')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div
