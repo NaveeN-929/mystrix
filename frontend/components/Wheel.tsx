@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { WHEEL_COLORS, WHEEL_TEXT_COLORS, ContestConfig } from '@/lib/contestConfig'
-import { calculateSpin, getConfettiConfig } from '@/lib/spinLogic'
+import { calculateSpin } from '@/lib/spinLogic'
 import { cn } from '@/lib/utils'
 
 interface WheelProps {

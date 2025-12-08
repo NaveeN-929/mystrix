@@ -99,6 +99,7 @@ router.post('/signup', signupValidation, async (req: Request, res: Response): Pr
         name: user.name,
         email: user.email,
         phone: user.phone,
+        shippingAddresses: user.shippingAddresses || [],
       },
       token,
     })
@@ -146,6 +147,7 @@ router.post('/login', loginValidation, async (req: Request, res: Response): Prom
         name: user.name,
         email: user.email,
         phone: user.phone,
+        shippingAddresses: user.shippingAddresses || [],
       },
       token,
     })
@@ -167,12 +169,20 @@ router.get('/me', authenticateUser, async (req: Request, res: Response): Promise
         email: user.email,
         phone: user.phone,
         createdAt: user.createdAt,
+        shippingAddresses: user.shippingAddresses || [],
       },
     })
   } catch (error) {
     console.error('Get profile error:', error)
     res.status(500).json({ error: 'Failed to get profile.' })
   }
+})
+
+// POST /api/auth/logout - Stateless logout (client should drop token)
+router.post('/logout', authenticateUser, async (_req: Request, res: Response): Promise<void> => {
+  // With stateless JWT, we simply instruct the client to discard the token.
+  // If future token blacklisting is added, implement it here.
+  res.json({ message: 'Logged out successfully' })
 })
 
 // PUT /api/auth/profile - Update user profile
@@ -215,6 +225,7 @@ router.put('/profile', authenticateUser, [
         name: user.name,
         email: user.email,
         phone: user.phone,
+        shippingAddresses: user.shippingAddresses || [],
       },
     })
   } catch (error) {

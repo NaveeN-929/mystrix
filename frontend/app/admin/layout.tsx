@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
-  Settings,
   Menu,
   X,
   Home,

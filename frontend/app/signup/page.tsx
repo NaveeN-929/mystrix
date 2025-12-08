@@ -4,14 +4,13 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import { User, Mail, Phone, Lock, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { authApi } from '@/lib/api'
-import { useAuthStore } from '@/lib/authStore'
 
 export default function SignupPage() {
   const router = useRouter()
-  const login = useAuthStore((state) => state.login)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -53,15 +52,20 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const response = await authApi.signup({
+      await authApi.signup({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
       })
 
-      // Store user data and token
-      login(response.user, response.token)
+      // Auto sign-in after signup
+      await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+        callbackUrl: '/',
+      })
       
       // Redirect to home
       router.push('/')

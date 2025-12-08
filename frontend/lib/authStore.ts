@@ -1,6 +1,17 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// Shipping Address type
+export interface ShippingAddress {
+  _id: string
+  name: string
+  phone: string
+  address: string
+  city: string
+  pincode: string
+  isDefault?: boolean
+}
+
 // User type
 export interface User {
   id: string
@@ -8,6 +19,7 @@ export interface User {
   email: string
   phone: string
   createdAt?: string
+  shippingAddresses?: ShippingAddress[]
 }
 
 // Auth Store for regular users
@@ -16,10 +28,28 @@ interface AuthStore {
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
+  hasHydrated: boolean
   login: (user: User, token: string) => void
   logout: () => void
   setLoading: (loading: boolean) => void
   updateUser: (user: Partial<User>) => void
+  setHydrated: (hydrated: boolean) => void
+}
+
+const AUTH_STORAGE_KEY = 'mystrix-auth'
+const ADMIN_STORAGE_KEY = 'mystrix-admin'
+
+// Hard-clear both user and admin persisted auth
+export const clearPersistedAuth = () => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY)
+    localStorage.removeItem(ADMIN_STORAGE_KEY)
+    sessionStorage.removeItem(AUTH_STORAGE_KEY)
+    sessionStorage.removeItem(ADMIN_STORAGE_KEY)
+  } catch (error) {
+    console.error('Error clearing persisted auth:', error)
+  }
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -29,6 +59,7 @@ export const useAuthStore = create<AuthStore>()(
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      hasHydrated: false,
 
       login: (user, token) => {
         set({
@@ -40,12 +71,16 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
+        // Clear the state
         set({
           user: null,
           token: null,
           isAuthenticated: false,
           isLoading: false,
         })
+
+        // Explicitly clear persisted storage to ensure complete logout
+        clearPersistedAuth()
       },
 
       setLoading: (loading) => {
@@ -57,14 +92,19 @@ export const useAuthStore = create<AuthStore>()(
           user: state.user ? { ...state.user, ...userData } : null,
         }))
       },
+
+      setHydrated: (hydrated) => set({ hasHydrated: hydrated }),
     }),
     {
-      name: 'mystrix-auth',
+      name: AUTH_STORAGE_KEY,
       partialize: (state) => ({
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true)
+      },
     }
   )
 )
@@ -104,6 +144,8 @@ export const useAdminStore = create<AdminStore>()(
           adminEmail: null,
           isLoading: false,
         })
+
+        clearPersistedAuth()
       },
 
       setLoading: (loading) => {
@@ -111,7 +153,7 @@ export const useAdminStore = create<AdminStore>()(
       },
     }),
     {
-      name: 'mystrix-admin',
+      name: ADMIN_STORAGE_KEY,
       partialize: (state) => ({
         isAdmin: state.isAdmin,
         adminToken: state.adminToken,

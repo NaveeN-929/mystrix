@@ -1,6 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose'
 import bcrypt from 'bcryptjs'
 
+export interface IShippingAddress {
+  name: string
+  phone: string
+  address: string
+  city: string
+  pincode: string
+  isDefault?: boolean
+}
+
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId
   name: string
@@ -8,10 +17,46 @@ export interface IUser extends Document {
   phone: string
   password: string
   isActive: boolean
+  shippingAddresses: IShippingAddress[]
   createdAt: Date
   updatedAt: Date
   comparePassword(candidatePassword: string): Promise<boolean>
 }
+
+const shippingAddressSchema = new Schema<IShippingAddress>(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    address: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    city: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    pincode: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { _id: true }
+)
 
 const userSchema = new Schema<IUser>(
   {
@@ -46,6 +91,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    shippingAddresses: {
+      type: [shippingAddressSchema],
+      default: [],
+    },
   },
   {
     timestamps: true,
@@ -70,8 +119,7 @@ userSchema.methods.comparePassword = async function (candidatePassword: string):
   return bcrypt.compare(candidatePassword, this.password)
 }
 
-// Index for faster queries
-userSchema.index({ email: 1 })
+// Index for faster queries (email already indexed via unique: true)
 userSchema.index({ phone: 1 })
 
 const User = mongoose.model<IUser>('User', userSchema)

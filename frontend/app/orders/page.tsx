@@ -3,34 +3,34 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Package, Clock, Truck, CheckCircle, XCircle, ChevronDown, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatPrice } from '@/lib/utils'
-import { useAuthStore } from '@/lib/authStore'
 import { ordersApi, Order } from '@/lib/api'
 
 export default function OrdersPage() {
   const router = useRouter()
-  const { isAuthenticated, token } = useAuthStore()
+  const { data: session, status } = useSession()
+  const token = session?.accessToken
   
   const [orders, setOrders] = useState<Order[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true)
   const [error, setError] = useState('')
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
 
-  // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login')
+    if (status === 'unauthenticated') {
+      router.push('/login?redirect=/orders')
     }
-  }, [isAuthenticated, router])
+  }, [status, router])
 
   // Fetch user orders
   useEffect(() => {
     const fetchOrders = async () => {
       if (!token) return
       
-      setIsLoading(true)
+      setIsLoadingOrders(true)
       setError('')
       
       try {
@@ -39,16 +39,17 @@ export default function OrdersPage() {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load orders')
       } finally {
-        setIsLoading(false)
+        setIsLoadingOrders(false)
       }
     }
 
-    if (isAuthenticated && token) {
+    if (status === 'authenticated' && token) {
       fetchOrders()
     }
-  }, [isAuthenticated, token])
+  }, [status, token])
 
-  if (!isAuthenticated) {
+  // Show loading while checking authentication
+  if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div
@@ -77,7 +78,7 @@ export default function OrdersPage() {
         </motion.div>
 
         {/* Loading State */}
-        {isLoading && (
+        {isLoadingOrders && (
           <div className="flex items-center justify-center py-12">
             <motion.div
               animate={{ rotate: 360 }}
@@ -88,7 +89,7 @@ export default function OrdersPage() {
         )}
 
         {/* Error State */}
-        {error && !isLoading && (
+        {error && !isLoadingOrders && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -99,7 +100,7 @@ export default function OrdersPage() {
         )}
 
         {/* Empty State */}
-        {!isLoading && !error && orders.length === 0 && (
+        {!isLoadingOrders && !error && orders.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -129,7 +130,7 @@ export default function OrdersPage() {
         )}
 
         {/* Orders List */}
-        {!isLoading && !error && orders.length > 0 && (
+        {!isLoadingOrders && !error && orders.length > 0 && (
           <div className="space-y-4">
             {orders.map((order, index) => (
               <motion.div

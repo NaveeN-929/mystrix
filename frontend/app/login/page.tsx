@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff, Heart, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { authApi } from '@/lib/api'
-import { useAuthStore } from '@/lib/authStore'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
-  const login = useAuthStore((state) => state.login)
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/'
   
   const [formData, setFormData] = useState({
     email: '',
@@ -32,16 +32,21 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await authApi.login({
+      const result = await signIn('credentials', {
+        redirect: false,
         email: formData.email,
         password: formData.password,
+        callbackUrl: redirectTo,
       })
 
-      // Store user data and token
-      login(response.user, response.token)
-      
-      // Redirect to home
-      router.push('/')
+      if (result?.error) {
+        setError(result.error)
+        return
+      }
+
+      // NextAuth returns a url when successful
+      const target = result?.url || redirectTo
+      router.push(target)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login')
     } finally {
@@ -234,5 +239,25 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+  )
+}
+
+function LoginFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+        className="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full"
+      />
+    </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginForm />
+    </Suspense>
   )
 }

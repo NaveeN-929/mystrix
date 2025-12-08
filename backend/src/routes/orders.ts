@@ -158,6 +158,41 @@ router.post(
         }
       }
       
+      // If user is authenticated, save shipping address to their profile
+      if (req.user && customerInfo.address && customerInfo.city && customerInfo.pincode) {
+        try {
+          const User = (await import('../models/User.js')).default
+          const user = await User.findById(req.user._id)
+          
+          if (user) {
+            // Check if this address already exists
+            const addressExists = user.shippingAddresses.some(
+              (addr) =>
+                addr.address === customerInfo.address &&
+                addr.city === customerInfo.city &&
+                addr.pincode === customerInfo.pincode
+            )
+            
+            // Add address if it doesn't exist
+            if (!addressExists) {
+              user.shippingAddresses.push({
+                name: customerInfo.name,
+                phone: customerInfo.phone,
+                address: customerInfo.address,
+                city: customerInfo.city,
+                pincode: customerInfo.pincode,
+                isDefault: user.shippingAddresses.length === 0, // Set as default if it's the first address
+              })
+              
+              await user.save()
+            }
+          }
+        } catch (userError) {
+          // Don't fail the order if address saving fails
+          console.error('Error saving shipping address to user profile:', userError)
+        }
+      }
+      
       res.status(201).json({
         message: 'Order created successfully',
         orderId: order.orderId,

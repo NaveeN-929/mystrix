@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { MainContent } from '@/components/MainContent'
 import { BackgroundEffects } from '@/components/BackgroundEffects'
+import { AuthProvider } from '@/components/AuthProvider'
 
 export const metadata: Metadata = {
   title: 'mystrix 🎁 | Win Amazing Products!',
@@ -23,14 +24,16 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-screen antialiased">
-        <BackgroundEffects />
-        <Navbar />
-        
-        <MainContent>
-          {children}
-        </MainContent>
+        <AuthProvider>
+          <BackgroundEffects />
+          <Navbar />
+          
+          <MainContent>
+            {children}
+          </MainContent>
 
-        <Footer />
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   )

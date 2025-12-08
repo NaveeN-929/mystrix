@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -43,13 +44,16 @@ interface FormErrors {
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const { items, getTotalPrice, clearCart } = useCartStore()
+  const user = session?.user
+  const token = session?.accessToken
   const [step, setStep] = useState<'form' | 'processing' | 'success'>('form')
   const [orderId, setOrderId] = useState<string>('')
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    phone: '',
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
     address: '',
     city: '',
     pincode: '',
@@ -101,7 +105,7 @@ export default function CheckoutPage() {
     setStep('processing')
 
     try {
-      // Create order via API
+      // Create order via API - pass token if user is authenticated
       const data = await ordersApi.create({
         items: items.map((item) => ({
           productId: item.product._id,
@@ -113,7 +117,7 @@ export default function CheckoutPage() {
         })),
         totalAmount: totalPrice,
         customerInfo: formData,
-      })
+      }, token || undefined)
       
       // Use order ID from response or generate locally
       const newOrderId = data.orderId || generateOrderId()

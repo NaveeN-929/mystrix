@@ -13,6 +13,7 @@ import orderRoutes from './routes/orders.js'
 import statsRoutes from './routes/stats.js'
 import contestRoutes from './routes/contests.js'
 import authRoutes from './routes/auth.js'
+import userRoutes from './routes/user.js'
 
 // Models (import to register with mongoose)
 import './models/User.js'
@@ -58,6 +59,7 @@ app.get('/health', (_, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/user', userRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/stats', statsRoutes)

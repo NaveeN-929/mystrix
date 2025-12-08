@@ -84,6 +84,13 @@ export const authApi = {
       body: data,
     }),
 
+  // User logout (stateless; client clears token)
+  logout: (token: string) =>
+    authRequest<{ message: string }>('/auth/logout', {
+      method: 'POST',
+      token,
+    }),
+
   // Get current user profile
   getProfile: (token: string) =>
     authRequest<{ user: User }>('/auth/me', { token }),
@@ -225,6 +232,29 @@ export interface User {
   email: string
   phone: string
   createdAt?: string
+}
+
+export interface UserProfile extends User {
+  shippingAddresses?: ShippingAddress[]
+}
+
+export interface ShippingAddress {
+  _id: string
+  name: string
+  phone: string
+  address: string
+  city: string
+  pincode: string
+  isDefault?: boolean
+}
+
+export interface AddAddressData {
+  name: string
+  phone: string
+  address: string
+  city: string
+  pincode: string
+  isDefault?: boolean
 }
 
 export interface SignupData {

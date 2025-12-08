@@ -3,14 +3,16 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { User, Mail, Phone, Edit2, Save, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/lib/authStore'
 import { authApi } from '@/lib/api'
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { isAuthenticated, user, token, updateUser } = useAuthStore()
+  const { data: session, status, update } = useSession()
+  const user = session?.user
+  const token = session?.accessToken
   
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -22,19 +24,18 @@ export default function ProfilePage() {
     phone: '',
   })
 
-  // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login')
+    if (status === 'unauthenticated') {
+      router.push('/login?redirect=/profile')
     }
-  }, [isAuthenticated, router])
+  }, [status, router])
 
   // Initialize form data when user loads
   useEffect(() => {
     if (user) {
       setFormData({
         name: user.name,
-        phone: user.phone,
+        phone: user.phone || '',
       })
     }
   }, [user])
@@ -46,7 +47,10 @@ export default function ProfilePage() {
   }
 
   const handleSave = async () => {
-    if (!token) return
+    if (!token) {
+      setError('You must be logged in to update your profile.')
+      return
+    }
     
     setError('')
     setSuccess('')
@@ -54,7 +58,14 @@ export default function ProfilePage() {
 
     try {
       const response = await authApi.updateProfile(formData, token)
-      updateUser(response.user)
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          ...response.user,
+        },
+        accessToken: session?.accessToken,
+      })
       setSuccess('Profile updated successfully! ✨')
       setIsEditing(false)
     } catch (err) {
@@ -68,14 +79,15 @@ export default function ProfilePage() {
     if (user) {
       setFormData({
         name: user.name,
-        phone: user.phone,
+        phone: user.phone || '',
       })
     }
     setIsEditing(false)
     setError('')
   }
 
-  if (!isAuthenticated || !user) {
+  // Show loading while checking authentication
+  if (status === 'loading' || status === 'unauthenticated' || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div
@@ -263,11 +275,16 @@ export default function ProfilePage() {
           <div className="mt-8 pt-6 border-t border-pink-100">
             <h3 className="text-sm font-medium text-gray-500 mb-3">Account Information</h3>
             <div className="text-sm text-gray-600">
-              <p>Member since: {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              }) : 'Recently joined'}</p>
+              <p>
+                Member since:{' '}
+                {user && 'createdAt' in user && user.createdAt
+                  ? new Date(user.createdAt as string).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })
+                  : 'Recently joined'}
+              </p>
             </div>
           </div>
         </motion.div>

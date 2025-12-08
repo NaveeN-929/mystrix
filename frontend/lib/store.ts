@@ -86,7 +86,7 @@ export const useCartStore = create<CartStore>()(
 
 // Game Store
 export interface GameState {
-  currentContest: 'A' | 'B' | 'C' | null
+  currentContest: string | null
   contestPrice: number
   wheelResult: number | null
   revealedProducts: Product[]
@@ -96,7 +96,7 @@ export interface GameState {
 
 interface GameStore {
   gameState: GameState
-  setContest: (contest: 'A' | 'B' | 'C', price: number) => void
+  setContest: (contest: string, price: number) => void
   setWheelResult: (result: number) => void
   initializeBoxes: (count: number) => void
   openBox: (index: number) => void

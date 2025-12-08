@@ -2,24 +2,28 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Home, Settings, User, LogOut, ChevronDown } from 'lucide-react'
+import { ShoppingCart, Home, User, LogOut, ChevronDown } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
-import { useAuthStore } from '@/lib/authStore'
 import { cn } from '@/lib/utils'
 
 export function Navbar() {
-  const router = useRouter()
   const pathname = usePathname()
+  const { data: session, status } = useSession()
   const totalItems = useCartStore((state) => state.getTotalItems())
-  const { isAuthenticated, user, logout } = useAuthStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const isAuthenticated = status === 'authenticated'
+  const user = session?.user
 
   const handleLogout = () => {
-    logout()
     setShowUserMenu(false)
-    router.push('/')
+    // Ensure signOut triggers navigation even if NextAuth call fails
+    signOut({ callbackUrl: '/login', redirect: true }).catch((error) => {
+      console.error('Sign out failed, forcing redirect', error)
+      window.location.href = '/login'
+    })
   }
 
   const navLinks = [
@@ -63,8 +67,16 @@ export function Navbar() {
               ))}
 
               {/* Auth Section */}
-              {isAuthenticated && user ? (
-                <div className="relative z-50">
+              {status === 'loading' ? (
+                <div className="flex items-center gap-2 px-4 py-2">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                    className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full"
+                  />
+                </div>
+              ) : isAuthenticated && user ? (
+                <div className="flex items-center gap-2 relative z-50">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -78,12 +90,27 @@ export function Navbar() {
                   >
                     <User size={18} />
                     <span className="hidden sm:block max-w-[100px] truncate">
-                      {user.name.split(' ')[0]}
+                      {user?.name?.split(' ')[0] || 'User'}
                     </span>
                     <ChevronDown size={16} className={cn(
                       'transition-transform duration-200',
                       showUserMenu && 'rotate-180'
                     )} />
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleLogout}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-full',
+                      'bg-white border border-pink-200 text-pink-600',
+                      'shadow-sm hover:bg-pink-50 transition-all duration-200'
+                    )}
+                    aria-label="Logout"
+                  >
+                    <LogOut size={16} />
+                    <span className="hidden sm:block text-sm font-medium">Logout</span>
                   </motion.button>
 
                   {/* User Dropdown Menu */}
@@ -104,19 +131,19 @@ export function Navbar() {
                         <div className="px-4 py-3 bg-gradient-to-r from-pink-50 to-lavender-50 border-b border-pink-100">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                              {user.name.charAt(0).toUpperCase()}
+                              {(user?.name || 'U').charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
-                              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                              <p className="text-sm font-semibold text-gray-800 truncate">{user?.name}</p>
+                              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Menu Items */}
                         <div className="py-1">
-                          <Link 
-                            href="/profile" 
+                          <Link
+                            href="/profile"
                             onClick={() => setShowUserMenu(false)}
                             className={cn(
                               'flex items-center gap-3 px-4 py-2.5',
@@ -127,9 +154,9 @@ export function Navbar() {
                             <User size={16} />
                             <span className="text-sm font-medium">My Profile</span>
                           </Link>
-                          
-                          <Link 
-                            href="/orders" 
+
+                          <Link
+                            href="/orders"
                             onClick={() => setShowUserMenu(false)}
                             className={cn(
                               'flex items-center gap-3 px-4 py-2.5',
@@ -140,21 +167,6 @@ export function Navbar() {
                             <ShoppingCart size={16} />
                             <span className="text-sm font-medium">My Orders</span>
                           </Link>
-                        </div>
-                        
-                        {/* Logout Button */}
-                        <div className="border-t border-pink-100 pt-1">
-                          <button
-                            onClick={handleLogout}
-                            className={cn(
-                              'w-full flex items-center gap-3 px-4 py-2.5',
-                              'text-red-500 hover:bg-red-50',
-                              'transition-colors duration-200'
-                            )}
-                          >
-                            <LogOut size={16} />
-                            <span className="text-sm font-medium">Logout</span>
-                          </button>
                         </div>
                       </motion.div>
                     )}
@@ -184,9 +196,9 @@ export function Navbar() {
 
       {/* Click outside to close dropdown */}
       {showUserMenu && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowUserMenu(false)} 
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowUserMenu(false)}
         />
       )}
     </motion.nav>
@@ -218,7 +230,7 @@ function NavLink({ href, label, icon: Icon, badge }: NavLinkProps) {
       >
         <Icon size={18} />
         <span className="hidden sm:block">{label}</span>
-        
+
         {badge !== undefined && badge > 0 && (
           <motion.span
             initial={{ scale: 0 }}
