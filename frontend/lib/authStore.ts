@@ -7,6 +7,7 @@ export interface User {
   name: string
   email: string
   phone: string
+  createdAt?: string
 }
 
 // Auth Store for regular users

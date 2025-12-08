@@ -2,10 +2,11 @@ import { Router, Request, Response } from 'express'
 import { body, validationResult } from 'express-validator'
 import { Order } from '../models/Order.js'
 import { Product } from '../models/Product.js'
+import { authenticateUser, optionalAuth } from '../middleware/auth.js'
 
 const router = Router()
 
-// GET /api/orders - List all orders
+// GET /api/orders - List all orders (admin)
 router.get('/', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1
@@ -44,6 +45,46 @@ router.get('/', async (req: Request, res: Response) => {
   }
 })
 
+// GET /api/orders/my-orders - Get authenticated user's orders
+router.get('/my-orders', authenticateUser, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!._id.toString()
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 20
+    const status = req.query.status as string
+    
+    const query: Record<string, unknown> = { userId }
+    
+    if (status) {
+      query.status = status
+    }
+    
+    const skip = (page - 1) * limit
+    
+    const [orders, total] = await Promise.all([
+      Order.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Order.countDocuments(query),
+    ])
+    
+    res.json({
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching user orders:', error)
+    res.status(500).json({ error: 'Failed to fetch your orders' })
+  }
+})
+
 // GET /api/orders/:id - Get single order
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -66,9 +107,10 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 })
 
-// POST /api/orders - Create order
+// POST /api/orders - Create order (optionally authenticated)
 router.post(
   '/',
+  optionalAuth, // User may or may not be logged in
   [
     body('items').isArray({ min: 1 }),
     body('customerInfo.name').notEmpty().trim(),
@@ -84,10 +126,14 @@ router.post(
       
       const { items, totalAmount, customerInfo, contestFee = 0 } = req.body
       
+      // Get userId if user is authenticated
+      const userId = req.user ? req.user._id.toString() : undefined
+      
       const order = new Order({
         items,
         totalAmount: totalAmount || 0,
         contestFee,
+        userId, // Link order to user if logged in
         customerInfo: {
           name: customerInfo.name,
           phone: customerInfo.phone,

@@ -155,12 +155,23 @@ export const ordersApi = {
     return request<{ orders: Order[]; pagination: Pagination }>(`/orders?${searchParams}`)
   },
 
+  // Get authenticated user's orders
+  getMyOrders: (params?: { page?: number; limit?: number; status?: string }, token?: string) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.append('page', params.page.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.status) searchParams.append('status', params.status)
+    return authRequest<{ orders: Order[]; pagination: Pagination }>(`/orders/my-orders?${searchParams}`, { token })
+  },
+
   getById: (id: string) => request<{ order: Order }>(`/orders/${id}`),
 
-  create: (data: CreateOrderData) =>
-    request<{ order: Order; orderId: string; message: string }>('/orders', {
+  // Create order (uses auth token if available)
+  create: (data: CreateOrderData, token?: string) =>
+    authRequest<{ order: Order; orderId: string; message: string }>('/orders', {
       method: 'POST',
       body: data,
+      token,
     }),
 
   updateStatus: (id: string, status: string) =>
@@ -268,6 +279,7 @@ export interface Product {
 export interface Order {
   _id: string
   orderId: string
+  userId?: string
   items: OrderItem[]
   totalAmount: number
   contestFee: number

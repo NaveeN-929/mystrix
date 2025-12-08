@@ -20,6 +20,7 @@ export interface ICustomerInfo {
 
 export interface IOrder extends Document {
   orderId: string
+  userId?: string // Optional: linked user account
   items: IOrderItem[]
   totalAmount: number
   contestFee: number
@@ -61,6 +62,11 @@ const orderSchema = new Schema<IOrder>(
       required: true,
       unique: true,
       index: true,
+    },
+    userId: {
+      type: String,
+      index: true,
+      sparse: true, // Allows null values while maintaining index
     },
     items: {
       type: [orderItemSchema],

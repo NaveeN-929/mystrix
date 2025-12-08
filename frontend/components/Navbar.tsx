@@ -95,26 +95,67 @@ export function Navbar() {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
                         className={cn(
-                          'absolute right-0 mt-2 w-48',
+                          'absolute right-0 mt-2 w-56',
                           'bg-white rounded-2xl shadow-kawaii border border-pink-100',
-                          'py-2 z-50'
+                          'py-2 z-50 overflow-hidden'
                         )}
                       >
-                        <div className="px-4 py-2 border-b border-pink-100">
-                          <p className="text-sm font-medium text-gray-800 truncate">{user.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                        {/* User Info Header */}
+                        <div className="px-4 py-3 bg-gradient-to-r from-pink-50 to-lavender-50 border-b border-pink-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
+                              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                            </div>
+                          </div>
                         </div>
-                        <button
-                          onClick={handleLogout}
-                          className={cn(
-                            'w-full flex items-center gap-2 px-4 py-2',
-                            'text-red-500 hover:bg-red-50',
-                            'transition-colors duration-200'
-                          )}
-                        >
-                          <LogOut size={16} />
-                          <span>Logout</span>
-                        </button>
+                        
+                        {/* Menu Items */}
+                        <div className="py-1">
+                          <Link 
+                            href="/profile" 
+                            onClick={() => setShowUserMenu(false)}
+                            className={cn(
+                              'flex items-center gap-3 px-4 py-2.5',
+                              'text-gray-700 hover:bg-pink-50 hover:text-pink-600',
+                              'transition-colors duration-200'
+                            )}
+                          >
+                            <User size={16} />
+                            <span className="text-sm font-medium">My Profile</span>
+                          </Link>
+                          
+                          <Link 
+                            href="/orders" 
+                            onClick={() => setShowUserMenu(false)}
+                            className={cn(
+                              'flex items-center gap-3 px-4 py-2.5',
+                              'text-gray-700 hover:bg-pink-50 hover:text-pink-600',
+                              'transition-colors duration-200'
+                            )}
+                          >
+                            <ShoppingCart size={16} />
+                            <span className="text-sm font-medium">My Orders</span>
+                          </Link>
+                        </div>
+                        
+                        {/* Logout Button */}
+                        <div className="border-t border-pink-100 pt-1">
+                          <button
+                            onClick={handleLogout}
+                            className={cn(
+                              'w-full flex items-center gap-3 px-4 py-2.5',
+                              'text-red-500 hover:bg-red-50',
+                              'transition-colors duration-200'
+                            )}
+                          >
+                            <LogOut size={16} />
+                            <span className="text-sm font-medium">Logout</span>
+                          </button>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
