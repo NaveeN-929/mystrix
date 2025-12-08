@@ -48,10 +48,10 @@ export default function AdminLayout({
       return
     }
 
-    // If not admin, redirect to admin login
+    // If not admin, redirect to admin login (keep isCheckingAuth true during redirect)
     if (!isAdmin) {
-      setIsCheckingAuth(false)
       router.push('/admin/login')
+      // Don't set isCheckingAuth to false - keep showing loader until redirect completes
     } else {
       setIsCheckingAuth(false)
     }
@@ -79,6 +79,19 @@ export default function AdminLayout({
   // For login page, render without sidebar
   if (isLoginPage) {
     return <>{children}</>
+  }
+
+  // Guard: Don't render sidebar for unauthenticated users (during redirect)
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-pink-50">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          className="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full"
+        />
+      </div>
+    )
   }
 
   return (

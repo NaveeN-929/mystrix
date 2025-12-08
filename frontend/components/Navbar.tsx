@@ -64,7 +64,7 @@ export function Navbar() {
 
               {/* Auth Section */}
               {isAuthenticated && user ? (
-                <div className="relative">
+                <div className="relative z-50">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express'
 import { body, validationResult } from 'express-validator'
+import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 import { generateToken, generateAdminToken, authenticateUser, getJwtSecret } from '../middleware/auth.js'
 
@@ -278,8 +279,7 @@ router.get('/admin/verify', async (req: Request, res: Response): Promise<void> =
     const token = authHeader.split(' ')[1]
     
     // Verify the token (will throw if invalid)
-    const jwt = await import('jsonwebtoken')
-    const decoded = jwt.default.verify(token, getJwtSecret()) as { isAdmin: boolean; email: string }
+    const decoded = jwt.verify(token, getJwtSecret()) as { isAdmin: boolean; email: string }
     
     if (!decoded.isAdmin) {
       res.status(403).json({ valid: false, error: 'Not an admin token' })
