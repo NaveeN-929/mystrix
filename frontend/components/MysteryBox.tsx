@@ -185,16 +185,20 @@ export function MysteryBox({ index, products, isOpened, onOpen, contestType }: M
               'grid gap-4',
               products.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
             )}>
-              {products.map((product, i) => (
-                <motion.div
-                  key={product._id}
-                  initial={{ opacity: 0, y: 20, rotateY: -90 }}
-                  animate={{ opacity: 1, y: 0, rotateY: 0 }}
-                  transition={{ delay: i * 0.2, type: 'spring' }}
-                >
-                  <ProductCard product={product} contestType={contestType} />
-                </motion.div>
-              ))}
+              <AnimatePresence mode="popLayout">
+                {products.map((product, i) => (
+                  <motion.div
+                    key={product._id}
+                    initial={{ opacity: 0, y: 20, rotateY: -90 }}
+                    animate={{ opacity: 1, y: 0, rotateY: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.3 } }}
+                    transition={{ delay: i * 0.2, type: 'spring' }}
+                    layout
+                  >
+                    <ProductCard product={product} contestType={contestType} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}

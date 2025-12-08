@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -14,8 +14,10 @@ import {
   Home,
   ChevronRight,
   Trophy,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAdminStore } from '@/lib/authStore'
 
 const sidebarLinks = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,7 +32,53 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const pathname = usePathname()
+  const router = useRouter()
+  const { isAdmin, adminEmail, adminLogout } = useAdminStore()
+
+  // Check if current path is the login page
+  const isLoginPage = pathname === '/admin/login'
+
+  // Protect admin routes
+  useEffect(() => {
+    // Skip auth check for login page
+    if (isLoginPage) {
+      setIsCheckingAuth(false)
+      return
+    }
+
+    // If not admin, redirect to admin login
+    if (!isAdmin) {
+      router.push('/admin/login')
+    } else {
+      setIsCheckingAuth(false)
+    }
+  }, [isAdmin, isLoginPage, router])
+
+  // Handle logout
+  const handleLogout = () => {
+    adminLogout()
+    router.push('/admin/login')
+  }
+
+  // Show loading while checking auth
+  if (isCheckingAuth && !isLoginPage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-pink-50">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          className="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full"
+        />
+      </div>
+    )
+  }
+
+  // For login page, render without sidebar
+  if (isLoginPage) {
+    return <>{children}</>
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -108,6 +156,12 @@ export default function AdminLayout({
 
           {/* Footer Links */}
           <div className="p-4 border-t border-pink-100 space-y-2">
+            {/* Admin Info */}
+            <div className="px-4 py-2 mb-2">
+              <p className="text-xs text-gray-400">Logged in as</p>
+              <p className="text-sm font-medium text-gray-600 truncate">{adminEmail}</p>
+            </div>
+            
             <Link href="/">
               <motion.div
                 whileHover={{ x: 5 }}
@@ -123,14 +177,15 @@ export default function AdminLayout({
             </Link>
             <motion.button
               whileHover={{ x: 5 }}
+              onClick={handleLogout}
               className={cn(
                 'w-full flex items-center gap-3 px-4 py-3 rounded-kawaii',
-                'text-gray-500 hover:bg-pink-50 hover:text-pink-600',
+                'text-red-500 hover:bg-red-50 hover:text-red-600',
                 'font-medium transition-all duration-200'
               )}
             >
-              <Settings size={20} />
-              Settings
+              <LogOut size={20} />
+              Logout
             </motion.button>
           </div>
         </div>

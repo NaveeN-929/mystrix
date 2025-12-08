@@ -252,35 +252,6 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* Promo Code */}
-              <div className="mb-6">
-                <label className="text-sm text-gray-500 mb-2 block">
-                  Promo Code
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Enter code"
-                    className={cn(
-                      'flex-1 px-4 py-2 rounded-kawaii',
-                      'border-2 border-pink-100 focus:border-pink-300',
-                      'outline-none transition-colors'
-                    )}
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={cn(
-                      'px-4 py-2 rounded-kawaii',
-                      'bg-pink-100 text-pink-500 font-medium',
-                      'hover:bg-pink-200 transition-colors'
-                    )}
-                  >
-                    Apply
-                  </motion.button>
-                </div>
-              </div>
-
               {/* Checkout Button */}
               <motion.button
                 whileHover={{ scale: 1.02 }}

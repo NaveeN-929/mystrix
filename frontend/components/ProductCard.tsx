@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, Check, Heart, Sparkles } from 'lucide-react'
 import { Product } from '@/lib/api'
 import { useCartStore } from '@/lib/store'
@@ -11,27 +11,60 @@ import { cn } from '@/lib/utils'
 
 interface ProductCardProps {
   product: Product
-  contestType: string
+  contestType?: string
   showAddToCart?: boolean
 }
 
 export function ProductCard({ product, contestType, showAddToCart = true }: ProductCardProps) {
-  const [isAdded, setIsAdded] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
+  const cartItems = useCartStore((state) => state.items)
+  
+  // Check if product is already in cart
+  const isInCart = cartItems.some((item) => item.product._id === product._id)
 
   const handleAddToCart = () => {
+    if (isInCart) return
+    
     addItem(product, contestType)
-    setIsAdded(true)
+    setJustAdded(true)
     
     // Play sound
     const audio = new Audio('/sounds/success.mp3')
     audio.volume = 0.3
     audio.play().catch(() => {})
+  }
 
-    // Reset after animation
-    setTimeout(() => setIsAdded(false), 2000)
+  // If product is in cart, show a compact "In Cart" indicator instead
+  if (isInCart) {
+    return (
+      <motion.div
+        initial={{ opacity: 1, scale: 1 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        className={cn(
+          'relative bg-gradient-to-br from-green-50 to-emerald-50 rounded-super overflow-hidden',
+          'shadow-soft border-2 border-green-200',
+          'p-4 flex items-center gap-3'
+        )}
+      >
+        <div className={cn(
+          'w-12 h-12 rounded-full',
+          'bg-green-500',
+          'flex items-center justify-center',
+          'shadow-md'
+        )}>
+          <Check size={24} className="text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-green-700 text-sm">Added to Cart!</p>
+          <p className="text-green-600 text-xs">{product.name}</p>
+        </div>
+        <span className="text-2xl">✨</span>
+      </motion.div>
+    )
   }
 
   return (
@@ -143,20 +176,20 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleAddToCart}
-            disabled={isAdded || product.stock === 0}
+            disabled={justAdded || product.stock === 0}
             className={cn(
               'w-full mt-4 py-3 rounded-kawaii',
               'font-bold text-white',
               'flex items-center justify-center gap-2',
               'transition-all duration-300',
-              isAdded
+              justAdded
                 ? 'bg-green-500'
                 : product.stock === 0
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-md hover:shadow-lg'
             )}
           >
-            {isAdded ? (
+            {justAdded ? (
               <>
                 <motion.div
                   initial={{ scale: 0 }}

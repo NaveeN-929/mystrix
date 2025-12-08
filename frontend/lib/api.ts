@@ -6,10 +6,28 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   headers?: Record<string, string>
+  token?: string
+}
+
+// Get token from localStorage (client-side only)
+const getStoredToken = (type: 'user' | 'admin' = 'user'): string | null => {
+  if (typeof window === 'undefined') return null
+  
+  try {
+    const storeName = type === 'admin' ? 'mystrix-admin' : 'mystrix-auth'
+    const stored = localStorage.getItem(storeName)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return type === 'admin' ? parsed.state?.adminToken : parsed.state?.token
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, headers = {} } = options
+  const { method = 'GET', body, headers = {}, token } = options
 
   const config: RequestInit = {
     method,
@@ -17,6 +35,11 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
       'Content-Type': 'application/json',
       ...headers,
     },
+  }
+
+  // Add authorization header if token provided
+  if (token) {
+    (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
   }
 
   if (body) {
@@ -27,10 +50,62 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Request failed' }))
-    throw new Error(error.message || `HTTP error! status: ${response.status}`)
+    throw new Error(error.error || error.message || `HTTP error! status: ${response.status}`)
   }
 
   return response.json()
+}
+
+// Authenticated request helper
+async function authRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const token = options.token || getStoredToken('user')
+  return request<T>(endpoint, { ...options, token: token || undefined })
+}
+
+// Admin authenticated request helper
+async function adminRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const token = options.token || getStoredToken('admin')
+  return request<T>(endpoint, { ...options, token: token || undefined })
+}
+
+// Auth API
+export const authApi = {
+  // User signup
+  signup: (data: SignupData) =>
+    request<AuthResponse>('/auth/signup', {
+      method: 'POST',
+      body: data,
+    }),
+
+  // User login
+  login: (data: LoginData) =>
+    request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: data,
+    }),
+
+  // Get current user profile
+  getProfile: (token: string) =>
+    authRequest<{ user: User }>('/auth/me', { token }),
+
+  // Update user profile
+  updateProfile: (data: UpdateProfileData, token: string) =>
+    authRequest<{ message: string; user: User }>('/auth/profile', {
+      method: 'PUT',
+      body: data,
+      token,
+    }),
+
+  // Admin login
+  adminLogin: (data: AdminLoginData) =>
+    request<AdminAuthResponse>('/auth/admin/login', {
+      method: 'POST',
+      body: data,
+    }),
+
+  // Verify admin token
+  verifyAdmin: (token: string) =>
+    adminRequest<{ valid: boolean; admin?: { email: string } }>('/auth/admin/verify', { token }),
 }
 
 // Products API
@@ -132,7 +207,52 @@ export const statsApi = {
   getDashboard: () => request<DashboardStats>('/stats'),
 }
 
-// Types
+// Auth Types
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone: string
+  createdAt?: string
+}
+
+export interface SignupData {
+  name: string
+  email: string
+  phone: string
+  password: string
+}
+
+export interface LoginData {
+  email: string
+  password: string
+}
+
+export interface AdminLoginData {
+  email: string
+  password: string
+}
+
+export interface UpdateProfileData {
+  name?: string
+  phone?: string
+}
+
+export interface AuthResponse {
+  message: string
+  user: User
+  token: string
+}
+
+export interface AdminAuthResponse {
+  message: string
+  admin: {
+    email: string
+  }
+  token: string
+}
+
+// Product Types
 export interface Product {
   _id: string
   productNumber: number
