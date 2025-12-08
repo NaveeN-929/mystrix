@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, Home, Settings, User, LogOut, ChevronDown } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
@@ -11,7 +11,13 @@ import { cn } from '@/lib/utils'
 
 export function Navbar() {
   const router = useRouter()
+  const pathname = usePathname()
   const totalItems = useCartStore((state) => state.getTotalItems())
+  
+  // Don't render navbar on admin pages
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
   const { isAuthenticated, user, logout } = useAuthStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
 

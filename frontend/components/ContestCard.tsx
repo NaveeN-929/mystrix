@@ -9,25 +9,21 @@ import { cn } from '@/lib/utils'
 interface ContestCardProps {
   contest: ContestConfig
   index: number
-  hidePrice?: boolean
-  disabled?: boolean
 }
 
-export function ContestCard({ contest, index, hidePrice = false, disabled = false }: ContestCardProps) {
+export function ContestCard({ contest, index }: ContestCardProps) {
   const cardContent = (
     <>
       {/* Glow Effect */}
-      {!disabled && (
-        <div
-          className={cn(
-            'absolute inset-0 rounded-super blur-xl opacity-0 group-hover:opacity-60',
-            'transition-opacity duration-500',
-            contest.id === 'A' && 'bg-pink-300',
-            contest.id === 'B' && 'bg-purple-300',
-            contest.id === 'C' && 'bg-teal-300'
-          )}
-        />
-      )}
+      <div
+        className={cn(
+          'absolute inset-0 rounded-super blur-xl opacity-0 group-hover:opacity-60',
+          'transition-opacity duration-500',
+          contest.id === 'A' && 'bg-pink-300',
+          contest.id === 'B' && 'bg-purple-300',
+          contest.id === 'C' && 'bg-teal-300'
+        )}
+      />
 
         {/* Card */}
         <div
@@ -81,15 +77,13 @@ export function ContestCard({ contest, index, hidePrice = false, disabled = fals
           </h3>
 
           {/* Price */}
-          {!hidePrice && (
-            <div className={cn(
-              'text-3xl sm:text-4xl font-extrabold mb-3',
-              'bg-gradient-to-r bg-clip-text text-transparent',
-              contest.color
-            )}>
-              {contest.priceDisplay || `₹${contest.price}`}
-            </div>
-          )}
+          <div className={cn(
+            'text-3xl sm:text-4xl font-extrabold mb-3',
+            'bg-gradient-to-r bg-clip-text text-transparent',
+            contest.color
+          )}>
+            {contest.priceDisplay || `₹${contest.price}`}
+          </div>
 
           {/* Description */}
           <p className="text-gray-600 text-sm sm:text-base mb-4">
@@ -114,21 +108,18 @@ export function ContestCard({ contest, index, hidePrice = false, disabled = fals
 
           {/* CTA Button */}
           <motion.button
-            whileHover={disabled ? {} : { scale: 1.05 }}
-            whileTap={disabled ? {} : { scale: 0.95 }}
-            disabled={disabled}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className={cn(
               'w-full py-3 px-6 rounded-kawaii',
               'text-white font-bold text-lg',
               'transition-all duration-300',
               'flex items-center justify-center gap-2',
-              disabled 
-                ? 'bg-gray-300 cursor-not-allowed' 
-                : `bg-gradient-to-r ${contest.color} shadow-lg hover:shadow-xl`
+              `bg-gradient-to-r ${contest.color} shadow-lg hover:shadow-xl`
             )}
           >
             <Sparkles size={20} />
-            {disabled ? 'Coming Soon' : 'Play Now'}
+            Play Now
           </motion.button>
 
           {/* Decorative Elements */}
@@ -147,18 +138,12 @@ export function ContestCard({ contest, index, hidePrice = false, disabled = fals
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.15, duration: 0.5 }}
-      whileHover={disabled ? {} : { y: -10, scale: 1.02 }}
-      className={cn('relative group', disabled && 'opacity-75')}
+      whileHover={{ y: -10, scale: 1.02 }}
+      className="relative group"
     >
-      {disabled ? (
-        <div className="cursor-not-allowed">
-          {cardContent}
-        </div>
-      ) : (
-        <Link href={`/contest/${contest.id}`}>
-          {cardContent}
-        </Link>
-      )}
+      <Link href={`/contest/${contest.id}`}>
+        {cardContent}
+      </Link>
     </motion.div>
   )
 }

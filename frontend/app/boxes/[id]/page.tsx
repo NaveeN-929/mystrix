@@ -8,7 +8,6 @@ import { MysteryBox } from '@/components/MysteryBox'
 import { ContestConfig, normalizeContest } from '@/lib/contestConfig'
 import { useGameStore, useCartStore } from '@/lib/store'
 import { Product, productsApi, contestsApi } from '@/lib/api'
-import { generateRandomProductNumbers } from '@/lib/spinLogic'
 import { cn } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 
@@ -37,26 +36,13 @@ export default function BoxesPage() {
 
     try {
       // Fetch products from API
-      let products: Product[] = []
-      
-      try {
-        const data = await productsApi.getRandom(totalProducts)
-        products = data.products
-      } catch {
-        // Fallback: generate mock products
-        const productNumbers = generateRandomProductNumbers(totalProducts, 50)
-        products = productNumbers.map((num, idx) => ({
-          _id: `product-${num}-${idx}`,
-          productNumber: num,
-          name: `Mystery Product #${num}`,
-          description: 'A wonderful surprise waiting for you!',
-          image: `https://picsum.photos/seed/product${num}/400/400`,
-          price: Math.floor(Math.random() * 500) + 100,
-          category: ['Beauty', 'Fashion', 'Electronics', 'Home', 'Accessories'][
-            Math.floor(Math.random() * 5)
-          ],
-          stock: Math.floor(Math.random() * 20) + 5,
-        }))
+      const data = await productsApi.getRandom(totalProducts)
+      const products = data.products || []
+
+      if (products.length === 0) {
+        console.error('No products available')
+        router.push('/')
+        return
       }
 
       // Distribute products into boxes
@@ -74,26 +60,8 @@ export default function BoxesPage() {
       setIsLoading(false)
     } catch (error) {
       console.error('Error fetching products:', error)
-      // Generate mock products on error
-      const products = Array.from({ length: totalProducts }, (_, idx) => ({
-        _id: `mock-${idx}`,
-        productNumber: idx + 1,
-        name: `Mystery Product #${idx + 1}`,
-        description: 'A wonderful surprise waiting for you!',
-        image: `https://picsum.photos/seed/mock${idx}/400/400`,
-        price: Math.floor(Math.random() * 500) + 100,
-        category: ['Beauty', 'Fashion', 'Electronics'][Math.floor(Math.random() * 3)],
-        stock: 10,
-      }))
-
-      const boxes: Product[][] = []
-      for (let i = 0; i < boxCount; i++) {
-        boxes.push(products.slice(i * productsPerBox, (i + 1) * productsPerBox))
-      }
-
-      setBoxProducts(boxes)
-      setOpenedBoxes(new Array(boxCount).fill(false))
-      setIsLoading(false)
+      // Redirect back home on error - no mock data
+      router.push('/')
     }
   }, [gameState.wheelResult, router])
 

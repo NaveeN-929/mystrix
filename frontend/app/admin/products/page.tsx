@@ -56,8 +56,9 @@ export default function AdminProductsPage() {
       })
       setProducts(data.products || [])
       setTotalPages(data.pagination?.pages || 1)
-    } catch {
-      setProducts(getMockProducts())
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+      setProducts([])
     } finally {
       setIsLoading(false)
     }
@@ -680,26 +681,4 @@ function ProductModal({
   )
 }
 
-// Mock products for demo
-function getMockProducts(): Product[] {
-  const categories = ['Beauty', 'Fashion', 'Electronics', 'Home', 'Toys', 'Accessories']
-  const names = [
-    'Cute Plush Bunny', 'Sparkle Lip Gloss', 'Kawaii Phone Case',
-    'Pastel Earbuds', 'Mini LED Mirror', 'Cozy Socks Set',
-    'Scented Candle', 'Hair Scrunchies Pack', 'Sticker Collection',
-    'Desk Organizer', 'Portable Charger', 'Makeup Brush Set',
-  ]
-
-  return Array.from({ length: 12 }, (_, i) => ({
-    _id: `product-${i + 1}`,
-    productNumber: i + 1,
-    name: names[i % names.length],
-    description: 'A lovely mystery product that will bring joy to your day!',
-    image: `https://picsum.photos/seed/product${i + 1}/400/400`,
-    price: Math.floor(Math.random() * 500) + 100,
-    category: categories[Math.floor(Math.random() * categories.length)],
-    stock: Math.floor(Math.random() * 50) + 1,
-    isActive: Math.random() > 0.1,
-  }))
-}
 

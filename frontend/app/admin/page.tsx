@@ -32,8 +32,19 @@ export default function AdminDashboard() {
       try {
         const data = await statsApi.getDashboard()
         setStats(data)
-      } catch {
-        setStats(getMockStats())
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+        // Set empty stats on error
+        setStats({
+          totalProducts: 0,
+          totalOrders: 0,
+          totalRevenue: 0,
+          activeProducts: 0,
+          pendingOrders: 0,
+          completedOrders: 0,
+          recentOrders: [],
+          topProducts: [],
+        })
       } finally {
         setIsLoading(false)
       }
@@ -185,7 +196,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(stats?.recentOrders || getMockOrders()).map((order, idx) => (
+                  {(stats?.recentOrders || []).map((order, idx) => (
                     <motion.tr
                       key={order.orderId}
                       initial={{ opacity: 0, x: -20 }}
@@ -343,7 +354,7 @@ export default function AdminDashboard() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {(stats?.topProducts || getMockTopProducts()).map((product, idx) => (
+            {(stats?.topProducts || []).map((product, idx) => (
               <motion.div
                 key={product.name}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -488,36 +499,4 @@ function OrderStatBar({
   )
 }
 
-// Mock data functions
-function getMockStats(): DashboardStats {
-  return {
-    totalProducts: 50,
-    totalOrders: 127,
-    totalRevenue: 89500,
-    activeProducts: 45,
-    pendingOrders: 18,
-    completedOrders: 89,
-    recentOrders: getMockOrders(),
-    topProducts: getMockTopProducts(),
-  }
-}
-
-function getMockOrders() {
-  return [
-    { orderId: 'MS-ABC123', customerName: 'Priya S.', amount: 899, status: 'pending', createdAt: new Date().toISOString() },
-    { orderId: 'MS-DEF456', customerName: 'Ananya R.', amount: 1299, status: 'confirmed', createdAt: new Date().toISOString() },
-    { orderId: 'MS-GHI789', customerName: 'Meera K.', amount: 599, status: 'shipped', createdAt: new Date().toISOString() },
-    { orderId: 'MS-JKL012', customerName: 'Sneha T.', amount: 1599, status: 'delivered', createdAt: new Date().toISOString() },
-    { orderId: 'MS-MNO345', customerName: 'Divya P.', amount: 799, status: 'pending', createdAt: new Date().toISOString() },
-  ]
-}
-
-function getMockTopProducts() {
-  return [
-    { name: 'Sparkle Lip Gloss', sales: 45, revenue: 22500 },
-    { name: 'Kawaii Phone Case', sales: 38, revenue: 19000 },
-    { name: 'Cute Plush Bunny', sales: 32, revenue: 16000 },
-    { name: 'Pastel Earbuds', sales: 28, revenue: 14000 },
-  ]
-}
 

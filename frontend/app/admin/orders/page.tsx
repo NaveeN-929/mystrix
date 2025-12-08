@@ -48,8 +48,9 @@ export default function AdminOrdersPage() {
       })
       setOrders(data.orders || [])
       setTotalPages(data.pagination?.pages || 1)
-    } catch {
-      setOrders(getMockOrders())
+    } catch (error) {
+      console.error('Failed to fetch orders:', error)
+      setOrders([])
     } finally {
       setIsLoading(false)
     }
@@ -539,36 +540,4 @@ function OrderDetailModal({
   )
 }
 
-// Mock orders for demo
-function getMockOrders(): Order[] {
-  const statuses: Order['status'][] = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
-  const names = ['Priya Sharma', 'Ananya Roy', 'Meera Kapoor', 'Sneha Tiwari', 'Divya Patel']
-  
-  return Array.from({ length: 10 }, (_, i) => ({
-    _id: `order-${i + 1}`,
-    orderId: `MS-${Date.now().toString(36).toUpperCase()}-${i}`,
-    items: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, (_, j) => ({
-      productId: `prod-${j}`,
-      productNumber: j + 1,
-      name: `Mystery Product #${j + 1}`,
-      price: Math.floor(Math.random() * 500) + 100,
-      quantity: 1,
-      contestType: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
-    })),
-    totalAmount: Math.floor(Math.random() * 2000) + 300,
-    contestFee: [100, 299, 499][Math.floor(Math.random() * 3)],
-    customerInfo: {
-      name: names[i % names.length],
-      phone: `98765432${i}0`,
-      email: `customer${i}@example.com`,
-      address: '123, Demo Street, Sample Area',
-      city: 'Mumbai',
-      pincode: `40000${i}`,
-    },
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    paymentStatus: 'completed' as const,
-    createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  }))
-}
 

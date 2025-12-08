@@ -4,14 +4,13 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Sparkles, Gift, Star, Heart } from 'lucide-react'
 import { ContestCard } from '@/components/ContestCard'
-import { CONTESTS, ContestConfig, normalizeContest } from '@/lib/contestConfig'
+import { ContestConfig, normalizeContest } from '@/lib/contestConfig'
 import { contestsApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function HomePage() {
-  const [contests, setContests] = useState<ContestConfig[]>(CONTESTS)
+  const [contests, setContests] = useState<ContestConfig[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isUsingFallback, setIsUsingFallback] = useState(false)
 
   useEffect(() => {
     async function fetchContests() {
@@ -19,15 +18,13 @@ export default function HomePage() {
         const data = await contestsApi.getAll()
         if (data.contests && data.contests.length > 0) {
           setContests(data.contests.map(normalizeContest))
-          setIsUsingFallback(false)
         } else {
-          // No active contests in DB - use fallback but hide prices
-          setIsUsingFallback(true)
+          // No active contests in DB
+          setContests([])
         }
       } catch (error) {
-        console.error('Failed to fetch contests, using defaults:', error)
-        // Keep using default CONTESTS on error - hide prices
-        setIsUsingFallback(true)
+        console.error('Failed to fetch contests:', error)
+        setContests([])
       } finally {
         setIsLoading(false)
       }
@@ -170,14 +167,29 @@ export default function HomePage() {
                   </div>
                 </div>
               ))
+            ) : contests.length === 0 ? (
+              // No contests available
+              <div className="col-span-full text-center py-12">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="max-w-md mx-auto"
+                >
+                  <div className="text-6xl mb-4">🎁</div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    No Contests Available
+                  </h3>
+                  <p className="text-gray-500">
+                    New contests coming soon! Check back later for exciting mystery box adventures.
+                  </p>
+                </motion.div>
+              </div>
             ) : (
               contests.map((contest, index) => (
                 <ContestCard 
                   key={contest.id} 
                   contest={contest} 
                   index={index} 
-                  hidePrice={isUsingFallback} 
-                  disabled={isUsingFallback}
                 />
               ))
             )}
