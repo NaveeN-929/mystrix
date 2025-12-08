@@ -250,8 +250,8 @@ router.post('/admin/login', adminLoginValidation, async (req: Request, res: Resp
       return
     }
 
-    // Generate admin token
-    const token = generateAdminToken(email)
+    // Generate admin token using authoritative email from environment
+    const token = generateAdminToken(adminEmail)
 
     res.json({
       message: 'Admin login successful! 🔐',
