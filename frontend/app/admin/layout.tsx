@@ -50,6 +50,7 @@ export default function AdminLayout({
 
     // If not admin, redirect to admin login
     if (!isAdmin) {
+      setIsCheckingAuth(false)
       router.push('/admin/login')
     } else {
       setIsCheckingAuth(false)

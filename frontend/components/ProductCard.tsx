@@ -19,18 +19,30 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
   const [isLiked, setIsLiked] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [justAdded, setJustAdded] = useState(false)
+  const [showCompactView, setShowCompactView] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
   const cartItems = useCartStore((state) => state.items)
   
   // Check if product is already in cart
   const isInCart = cartItems.some((item) => item.product._id === product._id)
   
-  // Reset justAdded when product is removed from cart
+  // Reset states when product is removed from cart
   useEffect(() => {
     if (!isInCart) {
       setJustAdded(false)
+      setShowCompactView(false)
     }
   }, [isInCart])
+  
+  // Show compact view after animation delay when product is added
+  useEffect(() => {
+    if (justAdded && isInCart) {
+      const timer = setTimeout(() => {
+        setShowCompactView(true)
+      }, 1500) // Show button feedback for 1.5 seconds before switching to compact view
+      return () => clearTimeout(timer)
+    }
+  }, [justAdded, isInCart])
 
   const handleAddToCart = () => {
     if (isInCart) return
@@ -44,11 +56,11 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
     audio.play().catch(() => {})
   }
 
-  // If product is in cart, show a compact "In Cart" indicator instead
-  if (isInCart) {
+  // If product is in cart AND we've shown the button feedback (or was already in cart), show compact view
+  if (isInCart && (showCompactView || !justAdded)) {
     return (
       <motion.div
-        initial={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         className={cn(

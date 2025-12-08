@@ -13,11 +13,6 @@ export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const totalItems = useCartStore((state) => state.getTotalItems())
-  
-  // Don't render navbar on admin pages
-  if (pathname?.startsWith('/admin')) {
-    return null
-  }
   const { isAuthenticated, user, logout } = useAuthStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
 
@@ -31,6 +26,11 @@ export function Navbar() {
     { href: '/', label: 'Home', icon: Home },
     { href: '/cart', label: 'Cart', icon: ShoppingCart, badge: totalItems },
   ]
+
+  // Don't render navbar on admin pages
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
 
   return (
     <motion.nav

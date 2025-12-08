@@ -20,7 +20,7 @@ interface JwtPayload {
 }
 
 // Get JWT secret from environment
-const getJwtSecret = (): Secret => {
+export const getJwtSecret = (): Secret => {
   const secret = process.env.JWT_SECRET
   if (!secret) {
     throw new Error('JWT_SECRET is not defined in environment variables')
