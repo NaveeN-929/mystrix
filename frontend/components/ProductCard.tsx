@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, Check, Heart, Sparkles } from 'lucide-react'
@@ -24,6 +24,13 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
   
   // Check if product is already in cart
   const isInCart = cartItems.some((item) => item.product._id === product._id)
+  
+  // Reset justAdded when product is removed from cart
+  useEffect(() => {
+    if (!isInCart) {
+      setJustAdded(false)
+    }
+  }, [isInCart])
 
   const handleAddToCart = () => {
     if (isInCart) return
