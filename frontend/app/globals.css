@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Nunito:wght@300;400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sakura: #ffb6c1;
+  --lavender: #e6e6fa;
+  --mint: #b2f5ea;
+  --peach: #ffdab9;
+  --sky: #87ceeb;
+  --bubblegum: #ff69b4;
+  --cream: #fffdd0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Quicksand', 'Nunito', sans-serif;
+  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 25%, #e8eaf6 50%, #e1f5fe 75%, #e0f7fa 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar - Kawaii Style */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fce4ec;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ffb6c1 0%, #e6e6fa 100%);
+  border-radius: 10px;
+  border: 2px solid #fce4ec;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff69b4 0%, #d8bfd8 100%);
+}
+
+/* Kawaii Button Base */
+@layer components {
+  .btn-kawaii {
+    @apply px-6 py-3 rounded-kawaii font-semibold text-white 
+           bg-gradient-to-r from-pink-400 to-pink-500
+           shadow-kawaii hover:shadow-kawaii-hover 
+           transform hover:scale-105 active:scale-95
+           transition-all duration-300 ease-out;
+  }
+
+  .btn-kawaii-secondary {
+    @apply px-6 py-3 rounded-kawaii font-semibold
+           bg-white text-pink-500 border-2 border-pink-300
+           shadow-soft hover:shadow-kawaii 
+           transform hover:scale-105 active:scale-95
+           transition-all duration-300 ease-out;
+  }
+
+  .card-kawaii {
+    @apply bg-white/80 backdrop-blur-sm rounded-super p-6
+           shadow-kawaii hover:shadow-kawaii-hover
+           border border-white/50
+           transition-all duration-300 ease-out;
+  }
+
+  .input-kawaii {
+    @apply w-full px-4 py-3 rounded-kawaii
+           bg-white/90 border-2 border-pink-200
+           focus:border-pink-400 focus:ring-4 focus:ring-pink-100
+           outline-none transition-all duration-200
+           placeholder:text-gray-400;
+  }
+}
+
+/* Floating Stars Background */
+.stars-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.star {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Sparkle Effect */
+.sparkle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
+  animation: sparkle-anim 1.5s ease-in-out infinite;
+}
+
+@keyframes sparkle-anim {
+  0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(180deg); opacity: 1; }
+}
+
+/* Mystery Box Styles */
+.mystery-box {
+  perspective: 1000px;
+}
+
+.mystery-box-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+}
+
+.mystery-box.opened .mystery-box-inner {
+  transform: rotateY(180deg);
+}
+
+.mystery-box-front,
+.mystery-box-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 24px;
+}
+
+.mystery-box-back {
+  transform: rotateY(180deg);
+}
+
+/* Wheel Styles */
+.wheel-container {
+  position: relative;
+  filter: drop-shadow(0 10px 30px rgba(255, 105, 180, 0.3));
+}
+
+.wheel {
+  transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* Confetti Animation */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti {
+  animation: confetti-fall 3s ease-out forwards;
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #ff69b4 0%, #ff9a9e 50%, #fecfef 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Shine Effect */
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shine-move 3s infinite;
+}
+
+@keyframes shine-move {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
+/* Pulse Ring */
+.pulse-ring {
+  position: relative;
+}
+
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #ff69b4, #e6e6fa, #b2f5ea);
+  z-index: -1;
+  animation: pulse-ring-anim 2s ease-in-out infinite;
+}
+
+@keyframes pulse-ring-anim {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+/* Loading Dots */
+.loading-dots span {
+  animation: loading-bounce 1.4s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: 0s; }
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes loading-bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+}
+
