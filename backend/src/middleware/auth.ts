@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import type { StringValue } from 'ms'
 import jwt, { SignOptions, Secret } from 'jsonwebtoken'
 import User, { IUser } from '../models/User.js'
 
@@ -30,9 +31,8 @@ export const getJwtSecret = (): Secret => {
 
 // Generate JWT Token
 export const generateToken = (userId: string, email: string): string => {
-  const options: SignOptions = {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-  }
+  const expiresIn: StringValue = (process.env.JWT_EXPIRES_IN ?? '7d') as StringValue
+  const options: SignOptions = { expiresIn }
   return jwt.sign({ userId, email }, getJwtSecret(), options)
 }
 
@@ -156,8 +156,7 @@ export const authenticateAdmin = (
 
 // Generate Admin Token
 export const generateAdminToken = (email: string): string => {
-  const options: SignOptions = {
-    expiresIn: process.env.ADMIN_TOKEN_EXPIRES_IN || '24h'
-  }
+  const expiresIn: StringValue = (process.env.ADMIN_TOKEN_EXPIRES_IN ?? '24h') as StringValue
+  const options: SignOptions = { expiresIn }
   return jwt.sign({ email, isAdmin: true }, getJwtSecret(), options)
 }

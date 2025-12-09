@@ -86,9 +86,6 @@ async function startServer() {
     await mongoose.connect(MONGODB_URI)
     console.log('✅ Connected to MongoDB')
     
-    // Initialize sample data if needed
-    await initializeDatabase()
-    
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`)
       console.log(`📦 API available at http://localhost:${PORT}/api`)
@@ -97,101 +94,6 @@ async function startServer() {
     console.error('❌ Failed to start server:', error)
     process.exit(1)
   }
-}
-
-// Initialize database with sample products and contests if empty
-async function initializeDatabase() {
-  const Product = mongoose.model('Product')
-  const Contest = mongoose.model('Contest')
-  
-  // Initialize products
-  const productCount = await Product.countDocuments()
-  if (productCount === 0) {
-    console.log('📝 Initializing database with sample products...')
-    const sampleProducts = generateSampleProducts()
-    await Product.insertMany(sampleProducts)
-    console.log(`✅ Added ${sampleProducts.length} sample products`)
-  }
-  
-  // Initialize contests
-  const contestCount = await Contest.countDocuments()
-  if (contestCount === 0) {
-    console.log('📝 Initializing database with default contests...')
-    const defaultContests = generateDefaultContests()
-    await Contest.insertMany(defaultContests)
-    console.log(`✅ Added ${defaultContests.length} default contests`)
-  }
-}
-
-function generateSampleProducts() {
-  const categories = ['Beauty', 'Fashion', 'Electronics', 'Home', 'Toys', 'Accessories']
-  const productNames = [
-    'Cute Plush Bunny', 'Sparkle Lip Gloss', 'Kawaii Phone Case',
-    'Pastel Earbuds', 'Mini LED Mirror', 'Cozy Socks Set',
-    'Scented Candle', 'Hair Scrunchies Pack', 'Sticker Collection',
-    'Desk Organizer', 'Portable Charger', 'Makeup Brush Set',
-    'Fairy Lights', 'Journal Notebook', 'Skincare Set',
-    'Kawaii Mug', 'Soft Blanket', 'Jewelry Box',
-    'Nail Art Kit', 'Room Decor Set'
-  ]
-  
-  return Array.from({ length: 50 }, (_, i) => ({
-    productNumber: i + 1,
-    name: productNames[i % productNames.length] + ` #${i + 1}`,
-    description: 'A lovely mystery product that will bring joy to your day! Perfect for gifting or treating yourself.',
-    image: `https://picsum.photos/seed/product${i + 1}/400/400`,
-    price: Math.floor(Math.random() * 500) + 100,
-    category: categories[Math.floor(Math.random() * categories.length)],
-    stock: Math.floor(Math.random() * 50) + 10,
-    isActive: true,
-  }))
-}
-
-function generateDefaultContests() {
-  return [
-    {
-      contestId: 'A',
-      name: 'Starter Scoop',
-      price: 100,
-      wheelRange: { min: 0, max: 5 },
-      productsPerBox: 1,
-      description: 'Spin to win 0-5 mystery boxes!',
-      color: 'from-pink-400 to-pink-500',
-      gradient: 'bg-gradient-to-br from-pink-100 via-pink-50 to-rose-100',
-      icon: '🎀',
-      badge: 'Popular',
-      isActive: true,
-      maxSpinsPerUser: 1,
-    },
-    {
-      contestId: 'B',
-      name: 'Super Scoop',
-      price: 299,
-      wheelRange: { min: 0, max: 10 },
-      productsPerBox: 1,
-      description: 'Spin to win 0-10 mystery boxes!',
-      color: 'from-purple-400 to-purple-500',
-      gradient: 'bg-gradient-to-br from-lavender-100 via-purple-50 to-violet-100',
-      icon: '🌟',
-      badge: 'Best Value',
-      isActive: true,
-      maxSpinsPerUser: 1,
-    },
-    {
-      contestId: 'C',
-      name: 'Mega Scoop',
-      price: 499,
-      wheelRange: { min: 1, max: 10 },
-      productsPerBox: 2,
-      description: 'Double products in each box! Guaranteed win!',
-      color: 'from-teal-400 to-emerald-500',
-      gradient: 'bg-gradient-to-br from-mint-100 via-teal-50 to-emerald-100',
-      icon: '💎',
-      badge: 'Premium',
-      isActive: true,
-      maxSpinsPerUser: 1,
-    },
-  ]
 }
 
 startServer()

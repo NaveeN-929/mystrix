@@ -12,9 +12,17 @@ interface WheelProps {
   contest: ContestConfig
   onSpinComplete: (result: number) => void
   hasSpun?: boolean
+  boxesToOpen?: number | null
+  onOpenBoxes?: () => void
 }
 
-export function Wheel({ contest, onSpinComplete, hasSpun = false }: WheelProps) {
+export function Wheel({
+  contest,
+  onSpinComplete,
+  hasSpun = false,
+  boxesToOpen = null,
+  onOpenBoxes,
+}: WheelProps) {
   const [isSpinning, setIsSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
   const [result, setResult] = useState<number | null>(null)
@@ -28,6 +36,17 @@ export function Wheel({ contest, onSpinComplete, hasSpun = false }: WheelProps) 
   const { min, max } = contest.wheelRange
   const segments = Array.from({ length: max - min + 1 }, (_, i) => min + i)
   const segmentAngle = 360 / segments.length
+
+  const canOpenBoxes =
+    hasSpun &&
+    typeof boxesToOpen === 'number' &&
+    boxesToOpen > 0 &&
+    Boolean(onOpenBoxes)
+
+  const openBoxesLabel =
+    boxesToOpen === 1
+      ? 'Open Your 1 Box!'
+      : `Open Your ${boxesToOpen ?? ''} Boxes!`
 
   // Create audio elements for sounds
   useEffect(() => {
@@ -84,7 +103,8 @@ export function Wheel({ contest, onSpinComplete, hasSpun = false }: WheelProps) 
     setTimeout(() => {
       setIsSpinning(false)
       setResult(finalResult)
-      
+      onSpinComplete(finalResult)
+
       // Hide wheel and show result with blast effect
       setShowWheel(false)
       setTimeout(() => {
@@ -160,10 +180,6 @@ export function Wheel({ contest, onSpinComplete, hasSpun = false }: WheelProps) 
         }
       }, 500)
 
-      // Callback with result
-      setTimeout(() => {
-        onSpinComplete(finalResult)
-      }, 2500)
     }, 4000)
   }, [isSpinning, hasSpun, result, rotation, segments, soundEnabled, onSpinComplete])
 
@@ -475,25 +491,44 @@ export function Wheel({ contest, onSpinComplete, hasSpun = false }: WheelProps) 
       </AnimatePresence>
 
       {/* Spin Button */}
-      <motion.button
-        whileHover={{ scale: isSpinning || hasSpun ? 1 : 1.05 }}
-        whileTap={{ scale: isSpinning || hasSpun ? 1 : 0.95 }}
-        onClick={handleSpin}
-        disabled={isSpinning || hasSpun}
-        className={cn(
-          'px-12 py-4 rounded-full',
-          'text-white font-bold text-xl',
-          'shadow-kawaii hover:shadow-kawaii-hover',
-          'transition-all duration-300',
-          'flex items-center gap-3',
-          isSpinning || hasSpun
-            ? 'bg-gray-300 cursor-not-allowed'
-            : `bg-gradient-to-r ${contest.color} shine`
-        )}
-      >
-        <Sparkles size={24} className={isSpinning ? 'animate-spin' : ''} />
-        {isSpinning ? 'Spinning...' : hasSpun ? 'Already Spun!' : 'SPIN NOW!'}
-      </motion.button>
+      {canOpenBoxes ? (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onOpenBoxes}
+          className={cn(
+            'px-12 py-4 rounded-full',
+            'text-white font-bold text-xl',
+            'shadow-kawaii hover:shadow-kawaii-hover',
+            'transition-all duration-300',
+            'flex items-center gap-3',
+            `bg-gradient-to-r ${contest.color} shine`
+          )}
+        >
+          <Sparkles size={24} />
+          {openBoxesLabel}
+        </motion.button>
+      ) : (
+        <motion.button
+          whileHover={{ scale: isSpinning || hasSpun ? 1 : 1.05 }}
+          whileTap={{ scale: isSpinning || hasSpun ? 1 : 0.95 }}
+          onClick={handleSpin}
+          disabled={isSpinning || hasSpun}
+          className={cn(
+            'px-12 py-4 rounded-full',
+            'text-white font-bold text-xl',
+            'shadow-kawaii hover:shadow-kawaii-hover',
+            'transition-all duration-300',
+            'flex items-center gap-3',
+            isSpinning || hasSpun
+              ? 'bg-gray-300 cursor-not-allowed'
+              : `bg-gradient-to-r ${contest.color} shine`
+          )}
+        >
+          <Sparkles size={24} className={isSpinning ? 'animate-spin' : ''} />
+          {isSpinning ? 'Spinning...' : hasSpun ? 'Already Spun!' : 'SPIN NOW!'}
+        </motion.button>
+      )}
     </div>
   )
 }

@@ -8,6 +8,7 @@ export interface IShippingAddress {
   city: string
   pincode: string
   isDefault?: boolean
+  _id?: mongoose.Types.ObjectId
 }
 
 export interface IUser extends Document {

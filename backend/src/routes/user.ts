@@ -180,7 +180,9 @@ router.put(
         return res.status(404).json({ error: 'User not found' })
       }
       
-      const addressToUpdate = user.shippingAddresses.id(addressId)
+      const addressToUpdate = user.shippingAddresses.find(
+        addr => addr._id?.toString() === addressId
+      )
       
       if (!addressToUpdate) {
         return res.status(404).json({ error: 'Address not found' })
@@ -225,16 +227,16 @@ router.delete('/addresses/:addressId', authenticateUser, async (req: Request, re
       return res.status(404).json({ error: 'User not found' })
     }
     
-    const addressToDelete = user.shippingAddresses.id(addressId)
+    const addressIndex = user.shippingAddresses.findIndex(
+      addr => addr._id?.toString() === addressId
+    )
     
-    if (!addressToDelete) {
+    if (addressIndex === -1) {
       return res.status(404).json({ error: 'Address not found' })
     }
     
-    const wasDefault = addressToDelete.isDefault
-    
-    // Remove the address
-    user.shippingAddresses.pull(addressId)
+    const [addressToDelete] = user.shippingAddresses.splice(addressIndex, 1)
+    const wasDefault = addressToDelete?.isDefault
     
     // If deleted address was default, set first remaining address as default
     if (wasDefault && user.shippingAddresses.length > 0) {

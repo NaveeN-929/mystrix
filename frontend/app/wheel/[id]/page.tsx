@@ -41,6 +41,12 @@ export default function WheelPage() {
     fetchContest()
   }, [params.id, router])
 
+  useEffect(() => {
+    if (gameState.hasSpun && gameState.wheelResult !== null && spinResult === null) {
+      setSpinResult(gameState.wheelResult)
+    }
+  }, [gameState.hasSpun, gameState.wheelResult, spinResult])
+
   const handleSpinComplete = (result: number) => {
     setSpinResult(result)
     setWheelResult(result)
@@ -58,6 +64,12 @@ export default function WheelPage() {
       } else {
         router.push(`/boxes/${contest.id}`)
       }
+    }
+  }
+
+  const handleOpenBoxes = () => {
+    if (contest && gameState.wheelResult && gameState.wheelResult > 0) {
+      router.push(`/boxes/${contest.id}`)
     }
   }
 
@@ -134,11 +146,17 @@ export default function WheelPage() {
             'flex flex-col items-center'
           )}
         >
-          <Wheel contest={contest} onSpinComplete={handleSpinComplete} hasSpun={gameState.hasSpun} />
+          <Wheel
+            contest={contest}
+            onSpinComplete={handleSpinComplete}
+            hasSpun={gameState.hasSpun}
+            boxesToOpen={gameState.wheelResult}
+            onOpenBoxes={handleOpenBoxes}
+          />
         </motion.div>
 
-        {/* Continue Button */}
-        {spinResult !== null && (
+        {/* Continue Button (only for 0 result) */}
+        {spinResult === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -160,17 +178,10 @@ export default function WheelPage() {
                   : `bg-gradient-to-r ${contest.color}`
               )}
             >
-              {spinResult === 0 ? (
-                <>
-                  Better Luck Next Time! 🍀
-                  <ArrowRight size={24} />
-                </>
-              ) : (
-                <>
-                  Open Your {spinResult} {spinResult === 1 ? 'Box' : 'Boxes'}!
-                  <ArrowRight size={24} />
-                </>
-              )}
+              <>
+                Better Luck Next Time! 🍀
+                <ArrowRight size={24} />
+              </>
             </motion.button>
           </motion.div>
         )}
