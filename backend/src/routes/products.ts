@@ -60,27 +60,11 @@ router.post('/random', async (req: Request, res: Response) => {
       { $match: { isActive: true, stock: { $gt: 0 } } },
       { $sample: { size: Math.min(count, 50) } },
     ])
-    
-    // If not enough products, generate mock ones
-    if (products.length < count) {
-      const mockProducts = Array.from(
-        { length: count - products.length },
-        (_, idx) => ({
-          _id: `mock-${idx}-${Date.now()}`,
-          productNumber: 100 + idx,
-          name: `Mystery Product #${100 + idx}`,
-          description: 'A wonderful surprise waiting for you!',
-          image: `https://picsum.photos/seed/mock${idx + Date.now()}/400/400`,
-          price: Math.floor(Math.random() * 500) + 100,
-          category: ['Beauty', 'Fashion', 'Electronics', 'Home', 'Accessories'][
-            Math.floor(Math.random() * 5)
-          ],
-          stock: 10,
-        })
-      )
-      products.push(...mockProducts)
+
+    if (products.length === 0) {
+      return res.status(404).json({ error: 'No products available' })
     }
-    
+
     res.json({ products })
   } catch (error) {
     console.error('Error fetching random products:', error)
