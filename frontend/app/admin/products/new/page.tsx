@@ -93,7 +93,7 @@ export default function NewProductPage() {
           productNumber: parseInt(formData.productNumber),
           name: formData.name.trim(),
           description: formData.description.trim(),
-          image: formData.image || `https://picsum.photos/seed/product${formData.productNumber}/400/400`,
+          image: formData.image.trim(),
           price: parseFloat(formData.price),
           category: formData.category,
           stock: parseInt(formData.stock),
@@ -362,7 +362,7 @@ export default function NewProductPage() {
             </div>
             <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
               <ImageIcon size={12} />
-              Leave empty for auto-generated placeholder image
+              Optional. Leave empty to keep the product without an image.
             </p>
           </div>
 
@@ -378,9 +378,6 @@ export default function NewProductPage() {
                   src={formData.image}
                   alt="Preview"
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://picsum.photos/400/400?grayscale'
-                  }}
                 />
               </div>
             </div>

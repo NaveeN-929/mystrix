@@ -18,6 +18,7 @@ import {
   X,
   Upload,
   AlertCircle,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 import { productsApi, Product } from '@/lib/api'
@@ -42,6 +43,7 @@ export default function AdminProductsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [modalError, setModalError] = useState<string | null>(null)
 
   const categories = ['Beauty', 'Fashion', 'Electronics', 'Home', 'Toys', 'Accessories', 'General']
 
@@ -80,11 +82,13 @@ export default function AdminProductsPage() {
 
   const handleSaveProduct = async (formData: ProductFormData) => {
     try {
+      setModalError(null)
+
       const productData = {
         productNumber: parseInt(formData.productNumber),
         name: formData.name,
         description: formData.description,
-        image: formData.image || `https://picsum.photos/seed/product${formData.productNumber}/400/400`,
+        image: formData.image.trim(),
         price: parseFloat(formData.price),
         category: formData.category,
         stock: parseInt(formData.stock),
@@ -99,7 +103,14 @@ export default function AdminProductsPage() {
       fetchProducts()
       setShowAddModal(false)
       setEditingProduct(null)
+      setModalError(null)
     } catch (error) {
+      const message = (error as Error)?.message || 'Failed to save product'
+      if (message.toLowerCase().includes('already exists')) {
+        setModalError('Product number already exists. Please choose another.')
+      } else {
+        setModalError(message)
+      }
       console.error('Failed to save product:', error)
     }
   }
@@ -137,7 +148,11 @@ export default function AdminProductsPage() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setModalError(null)
+              setEditingProduct(null)
+              setShowAddModal(true)
+            }}
             className={cn(
               'px-6 py-3 rounded-kawaii',
               'bg-gradient-to-r from-pink-500 to-purple-500',
@@ -248,12 +263,18 @@ export default function AdminProductsPage() {
                 >
                   {/* Image */}
                   <div className="relative aspect-square bg-gradient-to-br from-pink-50 to-lavender-50">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                    />
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <ImageIcon size={48} />
+                      </div>
+                    )}
                     <div className="absolute top-3 left-3">
                       <span className={cn(
                         'px-2 py-1 rounded-full text-xs font-bold',
@@ -364,8 +385,10 @@ export default function AdminProductsPage() {
               onClose={() => {
                 setShowAddModal(false)
                 setEditingProduct(null)
+                setModalError(null)
               }}
               onSave={handleSaveProduct}
+              error={modalError}
             />
           )}
         </AnimatePresence>
@@ -438,11 +461,13 @@ function ProductModal({
   categories,
   onClose,
   onSave,
+  error,
 }: {
   product: Product | null
   categories: string[]
   onClose: () => void
   onSave: (data: ProductFormData) => void
+  error?: string | null
 }) {
   const [formData, setFormData] = useState<ProductFormData>({
     productNumber: product?.productNumber?.toString() || '',
@@ -507,6 +532,12 @@ function ProductModal({
 
         {/* Form */}
         <div className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-kawaii bg-red-50 text-red-700 border border-red-200 text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -643,7 +674,7 @@ function ProductModal({
               </motion.button>
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              Leave empty for auto-generated placeholder
+              Optional. Leave empty to keep the product without an image.
             </p>
           </div>
         </div>

@@ -137,7 +137,7 @@ router.post(
         productNumber,
         name,
         description: description || '',
-        image: image || `https://picsum.photos/seed/product${productNumber}/400/400`,
+        image: typeof image === 'string' ? image.trim() : '',
         price,
         category: category || 'General',
         stock: stock || 0,
@@ -190,18 +190,12 @@ router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params
     
-    let product = await Product.findByIdAndUpdate(
-      id,
-      { isActive: false, updatedAt: new Date() },
-      { new: true }
-    )
+    // Try deleting by Mongo _id first
+    let product = await Product.findByIdAndDelete(id)
     
-    if (!product) {
-      product = await Product.findOneAndUpdate(
-        { productNumber: parseInt(id) },
-        { isActive: false, updatedAt: new Date() },
-        { new: true }
-      )
+    // Fallback: delete by productNumber if _id lookup fails
+    if (!product && !Number.isNaN(parseInt(id))) {
+      product = await Product.findOneAndDelete({ productNumber: parseInt(id) })
     }
     
     if (!product) {

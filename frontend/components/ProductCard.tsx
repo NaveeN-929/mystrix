@@ -131,7 +131,7 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
 
       {/* Image Container */}
       <div className="relative w-full aspect-square bg-gradient-to-br from-pink-50 to-lavender-50 overflow-hidden">
-        {!imageError ? (
+        {product.image && !imageError ? (
           <Image
             src={product.image}
             alt={product.name}
