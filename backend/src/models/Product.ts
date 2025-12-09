@@ -6,11 +6,13 @@ export interface IProduct extends Document {
   description: string
   image: string
   price: number
-  category: string
+  contestId: string
   stock: number
   isActive: boolean
   createdAt: Date
   updatedAt: Date
+  // Deprecated: kept for backward compatibility with older records
+  category?: string
 }
 
 const productSchema = new Schema<IProduct>(
@@ -41,10 +43,12 @@ const productSchema = new Schema<IProduct>(
       required: true,
       min: 0,
     },
-    category: {
+    contestId: {
       type: String,
-      default: 'General',
-      enum: ['Beauty', 'Fashion', 'Electronics', 'Home', 'Toys', 'Accessories', 'General'],
+      required: true,
+      uppercase: true,
+      trim: true,
+      index: true,
     },
     stock: {
       type: Number,

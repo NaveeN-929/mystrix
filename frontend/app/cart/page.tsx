@@ -143,10 +143,10 @@ export default function CartPage() {
                           {item.product.name}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {item.product.category}
+                          Contest {item.product.contestId || item.contestType || 'Unknown'}
                         </p>
                         <p className="text-xs text-purple-400 mt-1">
-                          From Contest {item.contestType}
+                          Added from contest {item.contestType || item.product.contestId || 'Unknown'}
                         </p>
                       </div>
 

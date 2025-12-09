@@ -36,7 +36,7 @@ export default function BoxesPage() {
 
     try {
       // Fetch products from API
-      const data = await productsApi.getRandom(totalProducts)
+      const data = await productsApi.getRandom(totalProducts, contestConfig.id)
       const products = data.products || []
 
       if (products.length === 0) {

@@ -21,7 +21,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
-import { productsApi, Product } from '@/lib/api'
+import { productsApi, Product, contestsApi, Contest } from '@/lib/api'
 
 interface ProductFormData {
   productNumber: string
@@ -29,7 +29,7 @@ interface ProductFormData {
   description: string
   image: string
   price: string
-  category: string
+  contestId: string
   stock: string
 }
 
@@ -37,15 +37,15 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
+  const [contestFilter, setContestFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [modalError, setModalError] = useState<string | null>(null)
-
-  const categories = ['Beauty', 'Fashion', 'Electronics', 'Home', 'Toys', 'Accessories', 'General']
+  const [contests, setContests] = useState<Contest[]>([])
+  const [isLoadingContests, setIsLoadingContests] = useState(false)
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true)
@@ -53,7 +53,7 @@ export default function AdminProductsPage() {
       const data = await productsApi.getAll({
         page: currentPage,
         limit: 12,
-        category: categoryFilter || undefined,
+        contestId: contestFilter || undefined,
         search: searchTerm || undefined,
       })
       setProducts(data.products || [])
@@ -64,7 +64,23 @@ export default function AdminProductsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [currentPage, categoryFilter, searchTerm])
+  }, [currentPage, contestFilter, searchTerm])
+
+  useEffect(() => {
+    const loadContests = async () => {
+      setIsLoadingContests(true)
+      try {
+        const data = await contestsApi.getAll(true)
+        setContests(data.contests || [])
+      } catch (error) {
+        console.error('Failed to fetch contests:', error)
+      } finally {
+        setIsLoadingContests(false)
+      }
+    }
+
+    loadContests()
+  }, [])
 
   useEffect(() => {
     fetchProducts()
@@ -90,7 +106,7 @@ export default function AdminProductsPage() {
         description: formData.description,
         image: formData.image.trim(),
         price: parseFloat(formData.price),
-        category: formData.category,
+        contestId: formData.contestId,
         stock: parseInt(formData.stock),
       }
 
@@ -192,21 +208,27 @@ export default function AdminProductsPage() {
               />
             </div>
 
-            {/* Category Filter */}
+            {/* Contest Filter */}
             <div className="relative sm:w-48">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                value={contestFilter}
+                onChange={(e) => setContestFilter(e.target.value)}
                 className={cn(
                   'w-full pl-10 pr-4 py-3 rounded-kawaii appearance-none',
                   'border-2 border-pink-100 focus:border-pink-300',
                   'outline-none transition-colors bg-white'
                 )}
               >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="">All Contests</option>
+                {isLoadingContests && <option value="" disabled>Loading contests...</option>}
+                {!isLoadingContests && contests.length === 0 && (
+                  <option value="" disabled>No contests found</option>
+                )}
+                {!isLoadingContests && contests.map((contest) => (
+                  <option key={contest.contestId || contest._id} value={contest.contestId}>
+                    {contest.contestId} - {contest.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -308,7 +330,9 @@ export default function AdminProductsPage() {
                       </span>
                     </div>
 
-                    <p className="text-sm text-gray-500 mb-2">{product.category}</p>
+                    <p className="text-sm text-gray-500 mb-2">
+                      {product.contestId ? `Contest ${product.contestId}` : product.category || 'Unassigned'}
+                    </p>
                     
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold gradient-text">
@@ -381,7 +405,7 @@ export default function AdminProductsPage() {
           {(showAddModal || editingProduct) && (
             <ProductModal
               product={editingProduct}
-              categories={categories}
+              contests={contests}
               onClose={() => {
                 setShowAddModal(false)
                 setEditingProduct(null)
@@ -458,13 +482,13 @@ export default function AdminProductsPage() {
 // Product Modal Component
 function ProductModal({
   product,
-  categories,
+  contests,
   onClose,
   onSave,
   error,
 }: {
   product: Product | null
-  categories: string[]
+  contests: Contest[]
   onClose: () => void
   onSave: (data: ProductFormData) => void
   error?: string | null
@@ -475,17 +499,24 @@ function ProductModal({
     description: product?.description || '',
     image: product?.image || '',
     price: product?.price?.toString() || '',
-    category: product?.category || 'General',
+    contestId: product?.contestId || contests[0]?.contestId || '',
     stock: product?.stock?.toString() || '10',
   })
 
   const [errors, setErrors] = useState<Partial<ProductFormData>>({})
+
+  useEffect(() => {
+    if (!formData.contestId && contests[0]?.contestId) {
+      setFormData((prev) => ({ ...prev, contestId: contests[0].contestId }))
+    }
+  }, [contests, formData.contestId, product])
 
   const validate = () => {
     const newErrors: Partial<ProductFormData> = {}
     if (!formData.productNumber) newErrors.productNumber = 'Required'
     if (!formData.name) newErrors.name = 'Required'
     if (!formData.price) newErrors.price = 'Required'
+    if (!formData.contestId) newErrors.contestId = 'Required'
     if (!formData.stock) newErrors.stock = 'Required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -626,21 +657,27 @@ function ProductModal({
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Category
+                Contest *
               </label>
               <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                value={formData.contestId}
+                onChange={(e) => setFormData({ ...formData, contestId: e.target.value })}
                 className={cn(
                   'w-full px-4 py-3 rounded-kawaii border-2',
                   'border-pink-100 focus:border-pink-300',
                   'outline-none transition-colors bg-white'
                 )}
               >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="">Select contest</option>
+                {contests.map((contest) => (
+                  <option key={contest.contestId || contest._id} value={contest.contestId}>
+                    {contest.contestId} - {contest.name}
+                  </option>
                 ))}
               </select>
+              {errors.contestId && (
+                <p className="text-red-500 text-xs mt-1">{errors.contestId}</p>
+              )}
             </div>
           </div>
 

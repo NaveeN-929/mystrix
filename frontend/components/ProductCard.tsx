@@ -22,6 +22,7 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
   const [showCompactView, setShowCompactView] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
   const cartItems = useCartStore((state) => state.items)
+  const resolvedContest = contestType ?? product.contestId ?? 'unknown'
   
   // Check if product is already in cart
   const isInCart = cartItems.some((item) => item.product._id === product._id)
@@ -47,7 +48,7 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
   const handleAddToCart = () => {
     if (isInCart) return
     
-    addItem(product, contestType ?? 'unknown')
+    addItem(product, resolvedContest)
     setJustAdded(true)
     
     // Play sound
@@ -159,7 +160,7 @@ export function ProductCard({ product, contestType, showAddToCart = true }: Prod
       <div className="p-4">
         {/* Category */}
         <span className="text-xs font-medium text-purple-400 uppercase tracking-wide">
-          {product.category}
+          {product.contestId ? `Contest ${product.contestId}` : product.category || resolvedContest}
         </span>
 
         {/* Name */}

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
-import { body, validationResult, query } from 'express-validator'
+import { body, validationResult } from 'express-validator'
 import { Product } from '../models/Product.js'
+import { Contest } from '../models/Contest.js'
 
 const router = Router()
 
@@ -9,13 +10,13 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1
     const limit = parseInt(req.query.limit as string) || 50
-    const category = req.query.category as string
+    const contestIdParam = (req.query.contestId as string) || (req.query.category as string)
     const search = req.query.search as string
     
     const query: Record<string, unknown> = { isActive: true }
     
-    if (category) {
-      query.category = category
+    if (contestIdParam) {
+      query.contestId = contestIdParam.toUpperCase()
     }
     
     if (search) {
@@ -54,10 +55,20 @@ router.get('/', async (req: Request, res: Response) => {
 // POST /api/products/random - Get random products
 router.post('/random', async (req: Request, res: Response) => {
   try {
-    const { count = 5 } = req.body
+    const { count = 5, contestId } = req.body
+    const normalizedContestId = (contestId as string | undefined)?.toUpperCase()
+    
+    if (!normalizedContestId) {
+      return res.status(400).json({ error: 'contestId is required to fetch products' })
+    }
+    
+    const contestExists = await Contest.findOne({ contestId: normalizedContestId, isActive: true })
+    if (!contestExists) {
+      return res.status(404).json({ error: 'Contest not found or inactive' })
+    }
     
     const products = await Product.aggregate([
-      { $match: { isActive: true, stock: { $gt: 0 } } },
+      { $match: { isActive: true, stock: { $gt: 0 }, contestId: normalizedContestId } },
       { $sample: { size: Math.min(count, 50) } },
     ])
 
@@ -101,6 +112,7 @@ router.post(
     body('productNumber').isInt({ min: 1 }),
     body('name').notEmpty().trim(),
     body('price').isFloat({ min: 0 }),
+    body('contestId').notEmpty().isString().trim(),
   ],
   async (req: Request, res: Response) => {
     try {
@@ -109,7 +121,13 @@ router.post(
         return res.status(400).json({ errors: errors.array() })
       }
       
-      const { productNumber, name, description, image, price, category, stock } = req.body
+      const { productNumber, name, description, image, price, contestId, stock } = req.body
+      const normalizedContestId = (contestId as string).toUpperCase()
+      
+      const contestExists = await Contest.findOne({ contestId: normalizedContestId })
+      if (!contestExists) {
+        return res.status(400).json({ error: 'Invalid contestId - contest not found' })
+      }
       
       // Check if product number exists
       const existing = await Product.findOne({ productNumber })
@@ -123,7 +141,7 @@ router.post(
         description: description || '',
         image: typeof image === 'string' ? image.trim() : '',
         price,
-        category: category || 'General',
+        contestId: normalizedContestId,
         stock: stock || 0,
         isActive: true,
       })
@@ -147,6 +165,15 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { id } = req.params
     const updateData = { ...req.body, updatedAt: new Date() }
     delete updateData._id
+    
+    if (updateData.contestId) {
+      const normalizedContestId = (updateData.contestId as string).toUpperCase()
+      const contestExists = await Contest.findOne({ contestId: normalizedContestId })
+      if (!contestExists) {
+        return res.status(400).json({ error: 'Invalid contestId - contest not found' })
+      }
+      updateData.contestId = normalizedContestId
+    }
     
     let product = await Product.findByIdAndUpdate(id, updateData, { new: true })
     

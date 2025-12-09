@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -14,6 +14,7 @@ import {
   Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { contestsApi, Contest } from '@/lib/api'
 
 interface FormData {
   productNumber: string
@@ -21,7 +22,7 @@ interface FormData {
   description: string
   image: string
   price: string
-  category: string
+  contestId: string
   stock: string
 }
 
@@ -30,24 +31,45 @@ interface FormErrors {
   name?: string
   price?: string
   stock?: string
+  contestId?: string
 }
 
 export default function NewProductPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [contests, setContests] = useState<Contest[]>([])
+  const [isLoadingContests, setIsLoadingContests] = useState(true)
   const [formData, setFormData] = useState<FormData>({
     productNumber: '',
     name: '',
     description: '',
     image: '',
     price: '',
-    category: 'General',
+    contestId: '',
     stock: '10',
   })
   const [errors, setErrors] = useState<FormErrors>({})
 
-  const categories = ['Beauty', 'Fashion', 'Electronics', 'Home', 'Toys', 'Accessories', 'General']
+  useEffect(() => {
+    const loadContests = async () => {
+      try {
+        const data = await contestsApi.getAll(true)
+        setContests(data.contests || [])
+        if (data.contests && data.contests.length > 0) {
+          setFormData((prev) =>
+            prev.contestId ? prev : { ...prev, contestId: data.contests[0].contestId }
+          )
+        }
+      } catch (error) {
+        console.error('Failed to load contests', error)
+      } finally {
+        setIsLoadingContests(false)
+      }
+    }
+
+    loadContests()
+  }, [])
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
@@ -66,6 +88,10 @@ export default function NewProductPage() {
       newErrors.price = 'Price is required'
     } else if (parseFloat(formData.price) <= 0) {
       newErrors.price = 'Price must be greater than 0'
+    }
+
+    if (!formData.contestId) {
+      newErrors.contestId = 'Contest is required'
     }
     
     if (!formData.stock) {
@@ -95,7 +121,7 @@ export default function NewProductPage() {
           description: formData.description.trim(),
           image: formData.image.trim(),
           price: parseFloat(formData.price),
-          category: formData.category,
+          contestId: formData.contestId,
           stock: parseInt(formData.stock),
         }),
       })
@@ -312,21 +338,35 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Category
+                Contest *
               </label>
               <select
-                value={formData.category}
-                onChange={(e) => handleChange('category', e.target.value)}
+                value={formData.contestId}
+                onChange={(e) => handleChange('contestId', e.target.value)}
                 className={cn(
                   'w-full px-4 py-3 rounded-kawaii border-2',
-                  'border-pink-100 focus:border-pink-300',
+                  errors.contestId ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
                   'outline-none transition-colors bg-white'
                 )}
+                disabled={isLoadingContests && contests.length === 0}
               >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="">Select contest</option>
+                {isLoadingContests && <option value="" disabled>Loading contests...</option>}
+                {!isLoadingContests && contests.length === 0 && (
+                  <option value="" disabled>No contests found</option>
+                )}
+                {contests.map((contest) => (
+                  <option key={contest.contestId || contest._id} value={contest.contestId}>
+                    {contest.contestId} - {contest.name}
+                  </option>
                 ))}
               </select>
+              {errors.contestId && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {errors.contestId}
+                </p>
+              )}
             </div>
           </div>
 

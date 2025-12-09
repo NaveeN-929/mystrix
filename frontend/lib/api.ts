@@ -117,21 +117,21 @@ export const authApi = {
 
 // Products API
 export const productsApi = {
-  getAll: (params?: { page?: number; limit?: number; category?: string; search?: string }) => {
+  getAll: (params?: { page?: number; limit?: number; contestId?: string; search?: string }) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
-    if (params?.category) searchParams.append('category', params.category)
+    if (params?.contestId) searchParams.append('contestId', params.contestId)
     if (params?.search) searchParams.append('search', params.search)
     return request<{ products: Product[]; pagination: Pagination }>(`/products?${searchParams}`)
   },
 
   getById: (id: string) => request<{ product: Product }>(`/products/${id}`),
 
-  getRandom: (count: number) => 
+  getRandom: (count: number, contestId: string) => 
     request<{ products: Product[] }>('/products/random', {
       method: 'POST',
-      body: { count },
+      body: { count, contestId },
     }),
 
   create: (data: CreateProductData) => 
@@ -301,7 +301,8 @@ export interface Product {
   description: string
   image: string
   price: number
-  category: string
+  contestId: string
+  category?: string
   stock: number
   isActive?: boolean
 }
@@ -344,7 +345,7 @@ export interface CreateProductData {
   description?: string
   image?: string
   price: number
-  category?: string
+  contestId: string
   stock?: number
 }
 
