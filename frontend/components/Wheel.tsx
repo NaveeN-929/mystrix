@@ -14,6 +14,7 @@ interface WheelProps {
   hasSpun?: boolean
   boxesToOpen?: number | null
   onOpenBoxes?: () => void
+  onLoseContinue?: () => void
 }
 
 export function Wheel({
@@ -22,6 +23,7 @@ export function Wheel({
   hasSpun = false,
   boxesToOpen = null,
   onOpenBoxes,
+  onLoseContinue,
 }: WheelProps) {
   const [isSpinning, setIsSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
@@ -508,25 +510,42 @@ export function Wheel({
           <Sparkles size={24} />
           {openBoxesLabel}
         </motion.button>
-      ) : (
+      ) : hasSpun && onLoseContinue ? (
         <motion.button
-          whileHover={{ scale: isSpinning || hasSpun ? 1 : 1.05 }}
-          whileTap={{ scale: isSpinning || hasSpun ? 1 : 0.95 }}
-          onClick={handleSpin}
-          disabled={isSpinning || hasSpun}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onLoseContinue}
           className={cn(
             'px-12 py-4 rounded-full',
             'text-white font-bold text-xl',
             'shadow-kawaii hover:shadow-kawaii-hover',
             'transition-all duration-300',
             'flex items-center gap-3',
-            isSpinning || hasSpun
+            'bg-gradient-to-r from-gray-400 to-gray-500'
+          )}
+        >
+          <Sparkles size={24} />
+          Better Luck Next Time! 🍀
+        </motion.button>
+      ) : (
+        <motion.button
+          whileHover={{ scale: isSpinning ? 1 : 1.05 }}
+          whileTap={{ scale: isSpinning ? 1 : 0.95 }}
+          onClick={handleSpin}
+          disabled={isSpinning}
+          className={cn(
+            'px-12 py-4 rounded-full',
+            'text-white font-bold text-xl',
+            'shadow-kawaii hover:shadow-kawaii-hover',
+            'transition-all duration-300',
+            'flex items-center gap-3',
+            isSpinning
               ? 'bg-gray-300 cursor-not-allowed'
               : `bg-gradient-to-r ${contest.color} shine`
           )}
         >
           <Sparkles size={24} className={isSpinning ? 'animate-spin' : ''} />
-          {isSpinning ? 'Spinning...' : hasSpun ? 'Already Spun!' : 'SPIN NOW!'}
+          {isSpinning ? 'Spinning...' : 'SPIN NOW!'}
         </motion.button>
       )}
     </div>

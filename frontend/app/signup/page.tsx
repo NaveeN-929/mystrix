@@ -1,16 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { signIn, useSession } from 'next-auth/react'
 import { User, Mail, Phone, Lock, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { authApi } from '@/lib/api'
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/'
+  const { status } = useSession()
   
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +26,12 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace(redirectTo)
+    }
+  }, [status, redirectTo, router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -64,11 +73,11 @@ export default function SignupPage() {
         redirect: false,
         email: formData.email,
         password: formData.password,
-        callbackUrl: '/',
+        callbackUrl: redirectTo,
       })
       
-      // Redirect to home
-      router.push('/')
+      // Redirect to target
+      router.push(redirectTo)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')
     } finally {

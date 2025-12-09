@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowRight, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { Wheel } from '@/components/Wheel'
 import { ContestConfig, normalizeContest } from '@/lib/contestConfig'
 import { contestsApi } from '@/lib/api'
@@ -56,15 +56,8 @@ export default function WheelPage() {
     }
   }
 
-  const handleContinue = () => {
-    if (contest && spinResult !== null) {
-      if (spinResult === 0) {
-        // No boxes won - go back home
-        router.push('/')
-      } else {
-        router.push(`/boxes/${contest.id}`)
-      }
-    }
+  const handleLoseContinue = () => {
+    router.push('/')
   }
 
   const handleOpenBoxes = () => {
@@ -152,39 +145,9 @@ export default function WheelPage() {
             hasSpun={gameState.hasSpun}
             boxesToOpen={gameState.wheelResult}
             onOpenBoxes={handleOpenBoxes}
+            onLoseContinue={spinResult === 0 ? handleLoseContinue : undefined}
           />
         </motion.div>
-
-        {/* Continue Button (only for 0 result) */}
-        {spinResult === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-center mt-8"
-          >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleContinue}
-              className={cn(
-                'px-12 py-4 rounded-full',
-                'text-white font-bold text-xl',
-                'shadow-kawaii hover:shadow-kawaii-hover',
-                'transition-all duration-300',
-                'flex items-center gap-3 mx-auto',
-                spinResult === 0 
-                  ? 'bg-gradient-to-r from-gray-400 to-gray-500'
-                  : `bg-gradient-to-r ${contest.color}`
-              )}
-            >
-              <>
-                Better Luck Next Time! 🍀
-                <ArrowRight size={24} />
-              </>
-            </motion.button>
-          </motion.div>
-        )}
 
         {/* Info Cards */}
         <motion.div

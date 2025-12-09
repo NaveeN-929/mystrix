@@ -1,17 +1,19 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ArrowLeft, Gift } from 'lucide-react'
+import { Trash2, ShoppingBag, ArrowRight, ArrowLeft, Gift } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { formatPrice, cn } from '@/lib/utils'
 
 export default function CartPage() {
   const router = useRouter()
-  const { items, removeItem, updateQuantity, clearCart, getTotalPrice } = useCartStore()
+  const { status } = useSession()
+  const { items, removeItem, clearCart, getTotalPrice } = useCartStore()
 
-  const totalPrice = getTotalPrice()
+  const itemsWorth = getTotalPrice()
 
   if (items.length === 0) {
     return (
@@ -86,7 +88,7 @@ export default function CartPage() {
             )}
           >
             <ArrowLeft size={18} />
-            Continue Shopping
+            Resume the Mystery
           </motion.button>
         </motion.div>
 
@@ -109,12 +111,20 @@ export default function CartPage() {
                 >
                   {/* Product Image */}
                   <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 rounded-kawaii overflow-hidden bg-gradient-to-br from-pink-50 to-lavender-50">
+                    {(() => {
+                      const imageSrc =
+                        (item.product.image && item.product.image.trim()) ||
+                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="%23f5f3ff"/><text x="75" y="80" text-anchor="middle" fill="%23a855f7" font-size="16" font-family="Arial">No Image</text></svg>'
+
+                      return (
                     <Image
-                      src={item.product.image}
-                      alt={item.product.name}
-                      fill
-                      className="object-cover"
-                    />
+                          src={imageSrc}
+                          alt={item.product.name}
+                          fill
+                          className="object-cover"
+                        />
+                      )
+                    })()}
                     {/* Contest Badge */}
                     <span className={cn(
                       'absolute top-2 left-2 px-2 py-0.5 rounded-full',
@@ -151,50 +161,19 @@ export default function CartPage() {
                       </motion.button>
                     </div>
 
-                    {/* Price & Quantity */}
+                    {/* Price & Quantity (read-only) */}
                     <div className="flex items-center justify-between mt-4">
-                      <span className="text-xl font-bold gradient-text">
-                        {formatPrice(item.product.price)}
-                      </span>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-2">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => updateQuantity(item.product._id, item.quantity - 1)}
-                          className={cn(
-                            'w-8 h-8 rounded-full flex items-center justify-center',
-                            'bg-pink-100 text-pink-500',
-                            'hover:bg-pink-200 transition-colors'
-                          )}
-                        >
-                          <Minus size={16} />
-                        </motion.button>
-                        
-                        <span className="w-8 text-center font-bold text-gray-800">
-                          {item.quantity}
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">Worth</span>
+                        <span className="text-xl font-bold gradient-text">
+                          {formatPrice(item.product.price * item.quantity)}
                         </span>
-                        
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => updateQuantity(item.product._id, item.quantity + 1)}
-                          className={cn(
-                            'w-8 h-8 rounded-full flex items-center justify-center',
-                            'bg-pink-100 text-pink-500',
-                            'hover:bg-pink-200 transition-colors'
-                          )}
-                        >
-                          <Plus size={16} />
-                        </motion.button>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Qty</p>
+                        <p className="text-lg font-bold text-gray-800">{item.quantity}</p>
                       </div>
                     </div>
-
-                    {/* Item Total */}
-                    <p className="text-right text-sm text-gray-500 mt-2">
-                      Subtotal: {formatPrice(item.product.price * item.quantity)}
-                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -234,21 +213,21 @@ export default function CartPage() {
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>Items ({items.length})</span>
-                  <span>{formatPrice(totalPrice)}</span>
+                  <span>Items worth</span>
+                  <span>{formatPrice(itemsWorth)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Contest fee</span>
+                  <span className="text-green-500">Paid ✓</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
                   <span className="text-green-500">Free! 🎉</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Contest Fee</span>
-                  <span className="text-green-500">Paid ✓</span>
-                </div>
                 <hr className="border-pink-100" />
                 <div className="flex justify-between font-bold text-lg">
-                  <span className="text-gray-800">Total</span>
-                  <span className="gradient-text">{formatPrice(totalPrice)}</span>
+                  <span className="text-gray-800">Total due now</span>
+                  <span className="text-green-500">₹0</span>
                 </div>
               </div>
 
@@ -256,7 +235,13 @@ export default function CartPage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => router.push('/checkout')}
+                onClick={() => {
+                  if (status !== 'authenticated') {
+                    router.push('/login?redirect=/checkout')
+                    return
+                  }
+                  router.push('/checkout')
+                }}
                 className={cn(
                   'w-full py-4 rounded-kawaii',
                   'bg-gradient-to-r from-pink-500 to-purple-500',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
@@ -44,7 +44,7 @@ interface FormErrors {
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { items, getTotalPrice, clearCart } = useCartStore()
   const user = session?.user
   const token = session?.accessToken
@@ -60,7 +60,14 @@ export default function CheckoutPage() {
   })
   const [errors, setErrors] = useState<FormErrors>({})
 
-  const totalPrice = getTotalPrice()
+  const itemsWorth = getTotalPrice()
+  const totalDueNow = 0
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login?redirect=/checkout')
+    }
+  }, [status, router])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -115,7 +122,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           contestType: item.contestType,
         })),
-        totalAmount: totalPrice,
+        totalAmount: totalDueNow,
         customerInfo: formData,
       }, token || undefined)
       
@@ -314,37 +321,43 @@ export default function CheckoutPage() {
 
                   {/* Items List */}
                   <div className="space-y-3 max-h-60 overflow-auto mb-4">
-                    {items.map((item) => (
-                      <div key={item.product._id} className="flex gap-3">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">
-                          <Image
-                            src={item.product.image}
-                            alt={item.product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 line-clamp-1">
-                            {item.product.name}
+                    {items.map((item) => {
+                      const imageSrc =
+                        (item.product.image && item.product.image.trim()) ||
+                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f5f3ff"/><text x="50" y="55" text-anchor="middle" fill="%23a855f7" font-size="14" font-family="Arial">No Image</text></svg>'
+
+                      return (
+                        <div key={item.product._id} className="flex gap-3">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">
+                            <Image
+                              src={imageSrc}
+                              alt={item.product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 line-clamp-1">
+                              {item.product.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Qty: {item.quantity} × {formatPrice(item.product.price)}
+                            </p>
+                          </div>
+                          <p className="text-sm font-bold text-gray-800">
+                            {formatPrice(item.product.price * item.quantity)}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            Qty: {item.quantity} × {formatPrice(item.product.price)}
-                          </p>
                         </div>
-                        <p className="text-sm font-bold text-gray-800">
-                          {formatPrice(item.product.price * item.quantity)}
-                        </p>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
 
                   <hr className="border-pink-100 my-4" />
 
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between text-gray-600">
-                      <span>Subtotal</span>
-                      <span>{formatPrice(totalPrice)}</span>
+                      <span>Items worth</span>
+                      <span>{formatPrice(itemsWorth)}</span>
                     </div>
                     <div className="flex justify-between text-gray-600">
                       <span>Shipping</span>
@@ -352,8 +365,8 @@ export default function CheckoutPage() {
                     </div>
                     <hr className="border-pink-100" />
                     <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span className="gradient-text">{formatPrice(totalPrice)}</span>
+                      <span>Amount due now</span>
+                      <span className="text-green-500">₹0</span>
                     </div>
                   </div>
 
@@ -464,7 +477,7 @@ export default function CheckoutPage() {
                     'shadow-kawaii hover:shadow-kawaii-hover'
                   )}
                 >
-                  Continue Shopping 🛍️
+                  Resume the Mystery ✨
                 </motion.button>
               </motion.div>
             </div>

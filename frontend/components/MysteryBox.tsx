@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { Sparkles } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Product } from '@/lib/api'
 import { ProductCard } from './ProductCard'
 import { cn } from '@/lib/utils'
 import { getConfettiConfig } from '@/lib/spinLogic'
+import { useCartStore } from '@/lib/store'
 
 
 interface MysteryBoxProps {
@@ -21,6 +22,16 @@ interface MysteryBoxProps {
 export function MysteryBox({ index, products, isOpened, onOpen, contestType }: MysteryBoxProps) {
   const [isOpening, setIsOpening] = useState(false)
   const [showProducts, setShowProducts] = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
+  const addItemToCart = useCartStore((state) => state.addItem)
+
+  // Once products are revealed, add them to cart automatically (one-time)
+  useEffect(() => {
+    if (showProducts && !addedToCart) {
+      products.forEach((product) => addItemToCart(product, contestType))
+      setAddedToCart(true)
+    }
+  }, [showProducts, addedToCart, products, addItemToCart, contestType])
 
   const handleClick = () => {
     if (isOpened || isOpening) return

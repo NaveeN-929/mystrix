@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
@@ -12,12 +13,18 @@ export function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const totalItems = useCartStore((state) => state.getTotalItems())
+  const [isClient, setIsClient] = useState(false)
+  const cartCount = isClient ? totalItems : 0
   const isAuthenticated = status === 'authenticated'
   const user = session?.user
 
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/cart', label: 'Cart', icon: ShoppingCart, badge: totalItems },
+    { href: '/cart', label: 'Cart', icon: ShoppingCart, badge: cartCount },
   ]
 
   // Don't render navbar on admin pages
@@ -134,7 +141,7 @@ function NavLink({ href, label, icon: Icon, badge }: NavLinkProps) {
 
         {badge !== undefined && badge > 0 && (
           <motion.span
-            initial={{ scale: 0 }}
+            initial={false}
             animate={{ scale: 1 }}
             className={cn(
               'absolute -top-1 -right-1',
