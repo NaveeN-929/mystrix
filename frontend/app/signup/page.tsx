@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -8,13 +8,14 @@ import { signIn, useSession } from 'next-auth/react'
 import { User, Mail, Phone, Lock, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { authApi } from '@/lib/api'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') || '/'
   const { status } = useSession()
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -75,7 +76,7 @@ export default function SignupPage() {
         password: formData.password,
         callbackUrl: redirectTo,
       })
-      
+
       // Redirect to target
       router.push(redirectTo)
     } catch (err) {
@@ -331,5 +332,19 @@ export default function SignupPage() {
         </p>
       </motion.div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner size="lg" text="Loading..." />
+        </div>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   )
 }

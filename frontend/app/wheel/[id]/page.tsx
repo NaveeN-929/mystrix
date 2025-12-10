@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { AlertCircle, CreditCard } from 'lucide-react'
@@ -20,7 +20,7 @@ interface PaymentInfo {
   wheelResult?: number
 }
 
-export default function WheelPage() {
+function WheelContent() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
@@ -37,7 +37,7 @@ export default function WheelPage() {
   const verifyPayment = useCallback(async () => {
     const paymentId = searchParams.get('payment_id')
     const orderId = searchParams.get('order_id')
-    
+
     // Also check sessionStorage for pending payment
     let pendingPayment = null
     if (typeof window !== 'undefined') {
@@ -64,7 +64,7 @@ export default function WheelPage() {
       // Verify payment status
       if (effectiveOrderId) {
         const verification = await paymentsApi.verifyPayment(effectiveOrderId)
-        
+
         if (verification.success && verification.status === 'PAID') {
           setPaymentInfo({
             paymentId: verification.paymentId!,
@@ -91,7 +91,7 @@ export default function WheelPage() {
       } else if (effectivePaymentId) {
         // Use check-spin endpoint
         const spinCheck = await paymentsApi.checkSpin(effectivePaymentId)
-        
+
         if (spinCheck.status === 'PAID') {
           setPaymentInfo({
             paymentId: spinCheck.paymentId,
@@ -195,9 +195,9 @@ export default function WheelPage() {
   if (isPageLoading || isVerifyingPayment) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner 
-          size="lg" 
-          text={isVerifyingPayment ? "Verifying Payment" : "Loading Wheel"} 
+        <LoadingSpinner
+          size="lg"
+          text={isVerifyingPayment ? "Verifying Payment" : "Loading Wheel"}
         />
       </div>
     )
@@ -413,6 +413,20 @@ export default function WheelPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function WheelPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner size="lg" text="Loading..." />
+        </div>
+      }
+    >
+      <WheelContent />
+    </Suspense>
   )
 }
 

@@ -159,8 +159,10 @@ router.post('/verify', async (req: Request, res: Response) => {
         success: true,
         status: 'PAID',
         paymentId: spinPayment.paymentId,
+        orderId: spinPayment.orderId,
         contestId: spinPayment.contestId,
-        spinAllowed: true
+        spinAllowed: true,
+        spinUsed: spinPayment.spinUsed || false
       })
     } else {
       // Signature mismatch
