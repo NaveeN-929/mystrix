@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles, Gift, Star, AlertCircle } from 'lucide-react'
+import { ArrowRight, Sparkles, Gift, Star, AlertCircle, CreditCard } from 'lucide-react'
 import { ContestConfig, normalizeContest } from '@/lib/contestConfig'
-import { contestsApi } from '@/lib/api'
+import { contestsApi, paymentsApi } from '@/lib/api'
 import { useGameStore } from '@/lib/store'
+import { useAuthStore } from '@/lib/authStore'
 import { cn } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { openRazorpayCheckout } from '@/lib/razorpay'
 
 export default function ContestPage() {
   const router = useRouter()
@@ -18,8 +20,11 @@ export default function ContestPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isPageLoading, setIsPageLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+
   const setContestStore = useGameStore((state) => state.setContest)
   const resetGame = useGameStore((state) => state.resetGame)
+  const { user, token } = useAuthStore()
 
   useEffect(() => {
     async function fetchContest() {
@@ -47,22 +52,77 @@ export default function ContestPage() {
         setIsPageLoading(false)
       }
     }
-    
+
     // Reset game state when entering a new contest
     resetGame()
     fetchContest()
   }, [params.id, router, resetGame])
 
-  const handleStartGame = () => {
-    if (!contest) return
-    
+  const handleStartGame = async () => {
+    if (!contest || isLoading) return
+
     setIsLoading(true)
-    setContestStore(contest.id, contest.price)
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      router.push(`/wheel/${contest.id}`)
-    }, 1500)
+    setPaymentError(null)
+
+    try {
+      // Use user details if logged in, otherwise use placeholder
+      const customerInfo = user
+        ? {
+          name: user.name || 'Customer',
+          email: user.email || 'customer@example.com',
+          phone: user.phone || '9999999999',
+        }
+        : {
+          name: 'Customer',
+          email: 'customer@example.com',
+          phone: '9999999999',
+        }
+
+      // Set contest in store
+      setContestStore(contest.id, contest.price)
+
+      // 1. Create Order
+      const order = await paymentsApi.createOrder(
+        {
+          contestId: contest.id,
+          customerInfo,
+        },
+        token || undefined
+      )
+
+      // 2. Open Razorpay Checkout
+      const result = await openRazorpayCheckout({
+        key: order.key,
+        amount: order.amount,
+        currency: order.currency,
+        name: order.name,
+        description: order.description,
+        orderId: order.orderId, // Razorpay Order ID
+        prefill: order.prefill,
+      })
+
+      // 3. Verify Payment
+      const verification = await paymentsApi.verifyPayment({
+        razorpay_order_id: result.razorpay_order_id,
+        razorpay_payment_id: result.razorpay_payment_id,
+        razorpay_signature: result.razorpay_signature,
+      })
+
+      if (verification.success && verification.status === 'PAID') {
+        // Success! Redirect to wheel
+        router.push(`/wheel/${contest.id}?payment_id=${order.paymentId}`)
+      } else {
+        setPaymentError('Payment verification failed. Please contact support.')
+        setIsLoading(false)
+      }
+
+    } catch (error) {
+      console.error('Payment error:', error)
+      setPaymentError(
+        error instanceof Error ? error.message : 'Something went wrong. Please try again.'
+      )
+      setIsLoading(false)
+    }
   }
 
   if (isPageLoading) {
@@ -97,7 +157,7 @@ export default function ContestPage() {
             Contest Not Available
           </h1>
           <p className="text-gray-500 mb-6">
-            This contest is not currently active or doesn&apos;t exist. 
+            This contest is not currently active or doesn&apos;t exist.
             Please check back later or try another contest.
           </p>
           <motion.button
@@ -151,7 +211,7 @@ export default function ContestPage() {
           {/* Header */}
           <div className="p-8 sm:p-12 text-center">
             <motion.div
-              animate={{ 
+              animate={{
                 y: [0, -10, 0],
                 rotate: [0, 5, -5, 0]
               }}
@@ -220,7 +280,7 @@ export default function ContestPage() {
                     'w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0',
                     `bg-gradient-to-r ${contest.color}`
                   )}>1</span>
-                  <span>Pay {contest.priceDisplay || `₹${contest.price}`} to enter the contest</span>
+                  <span>Pay {contest.priceDisplay || `₹${contest.price}`} securely via UPI, Cards, or Netbanking</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className={cn(
@@ -248,6 +308,18 @@ export default function ContestPage() {
               </ul>
             </div>
 
+            {/* Error Message */}
+            {paymentError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 rounded-kawaii p-4 mb-6 text-red-600 text-sm flex items-start gap-2"
+              >
+                <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                <span>{paymentError}</span>
+              </motion.div>
+            )}
+
             {/* Play Button */}
             <motion.button
               whileHover={{ scale: isLoading ? 1 : 1.02 }}
@@ -273,19 +345,20 @@ export default function ContestPage() {
                   >
                     <Sparkles size={24} />
                   </motion.div>
-                  Processing Payment...
+                  Opening Payment Gateway...
                 </>
               ) : (
                 <>
-                  <Sparkles size={24} />
+                  <CreditCard size={24} />
                   Pay {contest.priceDisplay || `₹${contest.price}`} & Play Now!
                   <ArrowRight size={24} />
                 </>
               )}
             </motion.button>
 
-            <p className="text-center text-gray-400 text-sm mt-4">
-              🔒 Secure payment • Instant play • 100% satisfaction guaranteed
+            <p className="text-center text-gray-400 text-sm mt-4 flex items-center justify-center gap-2">
+              <span className="text-lg">🔒</span>
+              Powered by Cashfree • UPI • Cards • Netbanking
             </p>
           </div>
         </motion.div>
@@ -368,4 +441,3 @@ function FeatureCard({
     </motion.div>
   )
 }
-

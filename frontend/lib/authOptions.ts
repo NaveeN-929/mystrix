@@ -60,18 +60,18 @@ export const authOptions: NextAuthOptions = {
           id: user.id as string,
           name: user.name as string,
           email: user.email as string,
-          phone: (user as any).phone as string | undefined,
+          phone: user.phone as string | undefined,
         }
-        token.accessToken = (user as any).token as string
+        token.accessToken = user.token as string
       }
       return token
     },
     async session({ session, token }) {
       session.user = {
-        id: (token.user as any)?.id,
-        name: (token.user as any)?.name,
-        email: (token.user as any)?.email,
-        phone: (token.user as any)?.phone,
+        id: token.user?.id || '',
+        name: token.user?.name || '',
+        email: token.user?.email || '',
+        phone: token.user?.phone,
       }
       session.accessToken = token.accessToken as string | undefined
       return session

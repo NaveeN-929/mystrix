@@ -1,3 +1,5 @@
+import { Contest } from '@/lib/api'
+
 // Contest Configuration
 export interface ContestConfig {
   id: string
@@ -74,9 +76,9 @@ export function getContestById(id: string): ContestConfig {
 }
 
 // Helper to convert API contest to ContestConfig
-export function normalizeContest(apiContest: any): ContestConfig {
+export function normalizeContest(apiContest: Contest): ContestConfig {
   return {
-    id: apiContest.contestId || apiContest.id || apiContest._id,
+    id: apiContest.contestId || apiContest._id,
     contestId: apiContest.contestId,
     _id: apiContest._id,
     name: apiContest.name,
@@ -85,9 +87,9 @@ export function normalizeContest(apiContest: any): ContestConfig {
     wheelRange: apiContest.wheelRange,
     productsPerBox: apiContest.productsPerBox,
     description: apiContest.description,
-    color: apiContest.color || 'from-pink-400 to-pink-500',
-    gradient: apiContest.gradient || 'bg-gradient-to-br from-pink-100 via-pink-50 to-rose-100',
-    icon: apiContest.icon || '🎁',
+    color: apiContest.color,
+    gradient: apiContest.gradient,
+    icon: apiContest.icon,
     badge: apiContest.badge,
     isActive: apiContest.isActive,
     maxSpinsPerUser: apiContest.maxSpinsPerUser || 1,
@@ -125,4 +127,3 @@ export const WHEEL_TEXT_COLORS = [
   '#DB7093', // Pale violet red
   '#008B8B', // Dark cyan
 ]
-

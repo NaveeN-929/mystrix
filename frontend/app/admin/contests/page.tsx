@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
@@ -42,7 +42,7 @@ export default function AdminContestsPage() {
   const [editingContest, setEditingContest] = useState<Contest | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
-  const fetchContests = async () => {
+  const fetchContests = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await contestsApi.getAll(showInactive)
@@ -53,11 +53,11 @@ export default function AdminContestsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [showInactive])
 
   useEffect(() => {
     fetchContests()
-  }, [showInactive])
+  }, [fetchContests])
 
   const handleDelete = async (contestId: string) => {
     try {
@@ -103,7 +103,7 @@ export default function AdminContestsPage() {
       } else {
         await contestsApi.create(contestData)
       }
-      
+
       fetchContests()
       setShowAddModal(false)
       setEditingContest(null)

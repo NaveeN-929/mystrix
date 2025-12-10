@@ -1,10 +1,12 @@
+// Environment loaded via --env-file
+// console.log('Backend Startup - RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID)
+
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
-import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 
 // Routes
@@ -14,12 +16,10 @@ import statsRoutes from './routes/stats.js'
 import contestRoutes from './routes/contests.js'
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
+import paymentRoutes from './routes/payments.js'
 
 // Models (import to register with mongoose)
 import './models/User.js'
-
-// Load environment variables
-dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -64,6 +64,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/contests', contestRoutes)
+app.use('/api/payments', paymentRoutes)
 
 // 404 handler
 app.use((req, res) => {
@@ -73,10 +74,10 @@ app.use((req, res) => {
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Error:', err)
-  res.status(500).json({ 
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
-      : err.message 
+  res.status(500).json({
+    error: process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : err.message
   })
 })
 
@@ -85,7 +86,7 @@ async function startServer() {
   try {
     await mongoose.connect(MONGODB_URI)
     console.log('✅ Connected to MongoDB')
-    
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`)
       console.log(`📦 API available at http://localhost:${PORT}/api`)

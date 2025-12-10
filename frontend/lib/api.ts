@@ -12,7 +12,7 @@ interface RequestOptions {
 // Get token from localStorage (client-side only)
 const getStoredToken = (type: 'user' | 'admin' = 'user'): string | null => {
   if (typeof window === 'undefined') return null
-  
+
   try {
     const storeName = type === 'admin' ? 'mystrix-admin' : 'mystrix-auth'
     const stored = localStorage.getItem(storeName)
@@ -128,13 +128,13 @@ export const productsApi = {
 
   getById: (id: string) => request<{ product: Product }>(`/products/${id}`),
 
-  getRandom: (count: number, contestId: string) => 
+  getRandom: (count: number, contestId: string) =>
     request<{ products: Product[] }>('/products/random', {
       method: 'POST',
       body: { count, contestId },
     }),
 
-  create: (data: CreateProductData) => 
+  create: (data: CreateProductData) =>
     request<{ product: Product; message: string }>('/products', {
       method: 'POST',
       body: data,
@@ -223,6 +223,43 @@ export const contestsApi = {
 // Stats API
 export const statsApi = {
   getDashboard: () => request<DashboardStats>('/stats'),
+}
+
+// Payments API (Cashfree)
+export const paymentsApi = {
+  // Create a payment order for spinning the wheel
+  createOrder: (data: CreatePaymentOrderData, token?: string) =>
+    authRequest<CreatePaymentOrderResponse>('/payments/create-order', {
+      method: 'POST',
+      body: data,
+      token,
+    }),
+
+  // Verify payment status
+  verifyPayment: (data: VerifyPaymentRequest) =>
+    request<VerifyPaymentResponse>('/payments/verify', {
+      method: 'POST',
+      body: data,
+    }),
+
+  // Check if spin is allowed for a payment
+  checkSpin: (paymentId: string) =>
+    request<CheckSpinResponse>(`/payments/check-spin/${paymentId}`),
+
+  // Mark spin as used after wheel spin
+  useSpin: (paymentId: string, wheelResult: number) =>
+    request<UseSpinResponse>('/payments/use-spin', {
+      method: 'POST',
+      body: { paymentId, wheelResult },
+    }),
+
+  // Get payment history (authenticated users)
+  getHistory: (params?: { page?: number; limit?: number }, token?: string) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.append('page', params.page.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    return authRequest<{ payments: SpinPayment[]; pagination: Pagination }>(`/payments/history?${searchParams}`, { token })
+  },
 }
 
 // Auth Types
@@ -430,5 +467,86 @@ export interface DashboardStats {
     sales: number
     revenue: number
   }>
+}
+
+// Payment Types (Cashfree)
+export interface CreatePaymentOrderData {
+  contestId: string
+  customerInfo: {
+    name: string
+    email: string
+    phone: string
+  }
+  returnUrl?: string
+}
+
+export interface CreatePaymentOrderResponse {
+  success: boolean
+  key: string
+  orderId: string // Razorpay Order ID
+  amount: number
+  currency: string
+  name: string
+  description: string
+  prefill: {
+    name?: string
+    email?: string
+    contact?: string
+  }
+  internalOrderId: string
+  paymentId: string
+}
+
+export interface VerifyPaymentRequest {
+  razorpay_order_id: string
+  razorpay_payment_id: string
+  razorpay_signature: string
+}
+
+export interface VerifyPaymentResponse {
+  success: boolean
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
+  paymentId?: string
+  contestId?: string
+  spinAllowed?: boolean
+  message?: string
+}
+
+export interface CheckSpinResponse {
+  paymentId: string
+  orderId: string
+  contestId: string
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
+  spinAllowed: boolean
+  spinUsed: boolean
+  wheelResult?: number
+}
+
+export interface UseSpinResponse {
+  success: boolean
+  message: string
+  wheelResult: number
+}
+
+export interface SpinPayment {
+  paymentId: string
+  orderId: string
+  userId?: string
+  contestId: string
+  contestName: string
+  amount: number
+  currency: string
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
+  spinAllowed: boolean
+  spinUsed: boolean
+  wheelResult?: number
+  customerInfo: {
+    name: string
+    email: string
+    phone: string
+  }
+  paidAt?: string
+  createdAt: string
+  updatedAt: string
 }
 
