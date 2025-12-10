@@ -78,6 +78,9 @@ export default function ContestPage() {
           phone: '9999999999',
         }
 
+      // Set contest in store
+      setContestStore(contest.id, contest.price)
+
       // 1. Create Order
       const order = await paymentsApi.createOrder(
         {

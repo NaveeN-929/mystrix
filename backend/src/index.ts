@@ -1,5 +1,5 @@
 // Environment loaded via --env-file
-console.log('Backend Startup - RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID)
+// console.log('Backend Startup - RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID)
 
 import express from 'express'
 import cors from 'cors'
