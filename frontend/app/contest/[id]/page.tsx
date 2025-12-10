@@ -10,7 +10,7 @@ import { useGameStore } from '@/lib/store'
 import { useAuthStore } from '@/lib/authStore'
 import { cn } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { initiateCashfreeCheckout, isPaymentSuccessful } from '@/lib/cashfree'
+import { openRazorpayCheckout } from '@/lib/razorpay'
 
 export default function ContestPage() {
   const router = useRouter()
@@ -52,7 +52,7 @@ export default function ContestPage() {
         setIsPageLoading(false)
       }
     }
-    
+
     // Reset game state when entering a new contest
     resetGame()
     fetchContest()
@@ -65,21 +65,21 @@ export default function ContestPage() {
     setPaymentError(null)
 
     try {
-      // Use user details if logged in, otherwise use placeholder (Cashfree will collect)
+      // Use user details if logged in, otherwise use placeholder
       const customerInfo = user
         ? {
-            name: user.name || 'Customer',
-            email: user.email || 'customer@example.com',
-            phone: user.phone || '9999999999',
-          }
+          name: user.name || 'Customer',
+          email: user.email || 'customer@example.com',
+          phone: user.phone || '9999999999',
+        }
         : {
-            name: 'Customer',
-            email: 'customer@example.com',
-            phone: '9999999999',
-          }
+          name: 'Customer',
+          email: 'customer@example.com',
+          phone: '9999999999',
+        }
 
-      // Create payment order
-      const paymentOrder = await paymentsApi.createOrder(
+      // 1. Create Order
+      const order = await paymentsApi.createOrder(
         {
           contestId: contest.id,
           customerInfo,
@@ -87,48 +87,32 @@ export default function ContestPage() {
         token || undefined
       )
 
-      // Store payment info for wheel page
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('pendingPayment', JSON.stringify({
-          paymentId: paymentOrder.paymentId,
-          orderId: paymentOrder.orderId,
-          contestId: contest.id,
-        }))
+      // 2. Open Razorpay Checkout
+      const result = await openRazorpayCheckout({
+        key: order.key,
+        amount: order.amount,
+        currency: order.currency,
+        name: order.name,
+        description: order.description,
+        orderId: order.orderId, // Razorpay Order ID
+        prefill: order.prefill,
+      })
+
+      // 3. Verify Payment
+      const verification = await paymentsApi.verifyPayment({
+        razorpay_order_id: result.razorpay_order_id,
+        razorpay_payment_id: result.razorpay_payment_id,
+        razorpay_signature: result.razorpay_signature,
+      })
+
+      if (verification.success && verification.status === 'PAID') {
+        // Success! Redirect to wheel
+        router.push(`/wheel/${contest.id}?payment_id=${order.paymentId}`)
+      } else {
+        setPaymentError('Payment verification failed. Please contact support.')
+        setIsLoading(false)
       }
 
-      // Set contest in store
-      setContestStore(contest.id, contest.price)
-
-      // Initiate Cashfree checkout - redirect mode for better UX
-      const result = await initiateCashfreeCheckout(
-        paymentOrder.paymentSessionId,
-        '_self' // Redirect to Cashfree page
-      )
-
-      // If modal mode was used and returned result
-      if (result && !result.redirect) {
-        if (result.error) {
-          setPaymentError(result.error.message || 'Payment failed. Please try again.')
-          setIsLoading(false)
-          return
-        }
-
-        if (isPaymentSuccessful(result)) {
-          // Verify payment on backend
-          const verification = await paymentsApi.verifyPayment(paymentOrder.orderId)
-
-          if (verification.success && verification.status === 'PAID') {
-            router.push(`/wheel/${contest.id}?payment_id=${paymentOrder.paymentId}`)
-          } else {
-            setPaymentError('Payment verification failed. Please contact support.')
-            setIsLoading(false)
-          }
-        } else {
-          setPaymentError('Payment was not completed. Please try again.')
-          setIsLoading(false)
-        }
-      }
-      // If redirected, the return URL will handle verification
     } catch (error) {
       console.error('Payment error:', error)
       setPaymentError(
@@ -170,7 +154,7 @@ export default function ContestPage() {
             Contest Not Available
           </h1>
           <p className="text-gray-500 mb-6">
-            This contest is not currently active or doesn&apos;t exist. 
+            This contest is not currently active or doesn&apos;t exist.
             Please check back later or try another contest.
           </p>
           <motion.button
@@ -224,7 +208,7 @@ export default function ContestPage() {
           {/* Header */}
           <div className="p-8 sm:p-12 text-center">
             <motion.div
-              animate={{ 
+              animate={{
                 y: [0, -10, 0],
                 rotate: [0, 5, -5, 0]
               }}
@@ -370,7 +354,7 @@ export default function ContestPage() {
             </motion.button>
 
             <p className="text-center text-gray-400 text-sm mt-4 flex items-center justify-center gap-2">
-              <span className="text-lg">🔒</span> 
+              <span className="text-lg">🔒</span>
               Powered by Cashfree • UPI • Cards • Netbanking
             </p>
           </div>

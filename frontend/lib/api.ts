@@ -12,7 +12,7 @@ interface RequestOptions {
 // Get token from localStorage (client-side only)
 const getStoredToken = (type: 'user' | 'admin' = 'user'): string | null => {
   if (typeof window === 'undefined') return null
-  
+
   try {
     const storeName = type === 'admin' ? 'mystrix-admin' : 'mystrix-auth'
     const stored = localStorage.getItem(storeName)
@@ -128,13 +128,13 @@ export const productsApi = {
 
   getById: (id: string) => request<{ product: Product }>(`/products/${id}`),
 
-  getRandom: (count: number, contestId: string) => 
+  getRandom: (count: number, contestId: string) =>
     request<{ products: Product[] }>('/products/random', {
       method: 'POST',
       body: { count, contestId },
     }),
 
-  create: (data: CreateProductData) => 
+  create: (data: CreateProductData) =>
     request<{ product: Product; message: string }>('/products', {
       method: 'POST',
       body: data,
@@ -236,8 +236,11 @@ export const paymentsApi = {
     }),
 
   // Verify payment status
-  verifyPayment: (orderId: string) =>
-    request<VerifyPaymentResponse>(`/payments/verify/${orderId}`),
+  verifyPayment: (data: VerifyPaymentRequest) =>
+    request<VerifyPaymentResponse>('/payments/verify', {
+      method: 'POST',
+      body: data,
+    }),
 
   // Check if spin is allowed for a payment
   checkSpin: (paymentId: string) =>
@@ -479,24 +482,33 @@ export interface CreatePaymentOrderData {
 
 export interface CreatePaymentOrderResponse {
   success: boolean
+  key: string
+  orderId: string // Razorpay Order ID
+  amount: number
+  currency: string
+  name: string
+  description: string
+  prefill: {
+    name?: string
+    email?: string
+    contact?: string
+  }
+  internalOrderId: string
   paymentId: string
-  orderId: string
-  paymentSessionId: string
-  orderAmount: number
-  orderCurrency: string
-  contestId: string
-  contestName: string
-  cfOrderId: string
+}
+
+export interface VerifyPaymentRequest {
+  razorpay_order_id: string
+  razorpay_payment_id: string
+  razorpay_signature: string
 }
 
 export interface VerifyPaymentResponse {
   success: boolean
   status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
   paymentId?: string
-  orderId?: string
   contestId?: string
   spinAllowed?: boolean
-  spinUsed?: boolean
   message?: string
 }
 

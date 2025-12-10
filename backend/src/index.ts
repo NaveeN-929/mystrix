@@ -1,6 +1,5 @@
-import dotenv from 'dotenv'
-// Load environment variables FIRST before any other imports
-dotenv.config()
+// Environment loaded via --env-file
+console.log('Backend Startup - RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID)
 
 import express from 'express'
 import cors from 'cors'
@@ -75,10 +74,10 @@ app.use((req, res) => {
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Error:', err)
-  res.status(500).json({ 
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
-      : err.message 
+  res.status(500).json({
+    error: process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : err.message
   })
 })
 
@@ -87,7 +86,7 @@ async function startServer() {
   try {
     await mongoose.connect(MONGODB_URI)
     console.log('✅ Connected to MongoDB')
-    
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`)
       console.log(`📦 API available at http://localhost:${PORT}/api`)

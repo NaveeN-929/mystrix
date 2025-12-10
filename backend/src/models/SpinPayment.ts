@@ -13,6 +13,9 @@ export interface ISpinPayment extends Document {
   paymentSessionId?: string
   cfOrderId?: string
   cfPaymentId?: string
+  razorpayOrderId?: string
+  razorpayPaymentId?: string
+  razorpaySignature?: string
   spinAllowed: boolean
   spinUsed: boolean
   wheelResult?: number
@@ -78,6 +81,16 @@ const spinPaymentSchema = new Schema<ISpinPayment>(
       type: String,
     },
     cfPaymentId: {
+      type: String,
+    },
+    razorpayOrderId: {
+      type: String,
+      index: true,
+    },
+    razorpayPaymentId: {
+      type: String,
+    },
+    razorpaySignature: {
       type: String,
     },
     spinAllowed: {

@@ -1,60 +1,30 @@
 import { Router, Request, Response } from 'express'
 import { body, validationResult } from 'express-validator'
 import crypto from 'crypto'
+import Razorpay from 'razorpay'
 import { SpinPayment } from '../models/SpinPayment.js'
 import { Contest } from '../models/Contest.js'
 import { optionalAuth } from '../middleware/auth.js'
 
 const router = Router()
 
-// Cashfree API configuration
-const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || ''
-const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || ''
-const CASHFREE_API_VERSION = '2023-08-01'
-const CASHFREE_ENV = process.env.CASHFREE_ENV || 'sandbox' // 'sandbox' or 'production'
+// Razorpay Configuration
+const KEY_ID = process.env.RAZORPAY_KEY_ID
+const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET
 
-const CASHFREE_BASE_URL = CASHFREE_ENV === 'production'
-  ? 'https://api.cashfree.com/pg'
-  : 'https://sandbox.cashfree.com/pg'
+console.log('Razorpay Config:', { keyId: KEY_ID, hasSecret: !!KEY_SECRET })
+
+const razorpay = new Razorpay({
+  key_id: KEY_ID,
+  key_secret: KEY_SECRET,
+})
 
 // Check if credentials are configured
-const isCashfreeConfigured = () => {
-  return CASHFREE_APP_ID && CASHFREE_SECRET_KEY && 
-         CASHFREE_APP_ID !== '' && CASHFREE_SECRET_KEY !== ''
+const isRazorpayConfigured = () => {
+  return KEY_ID && KEY_SECRET
 }
 
-// Helper to make Cashfree API requests
-async function cashfreeRequest(endpoint: string, method: string, body?: unknown) {
-  const url = `${CASHFREE_BASE_URL}${endpoint}`
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'x-api-version': CASHFREE_API_VERSION,
-    'x-client-id': CASHFREE_APP_ID,
-    'x-client-secret': CASHFREE_SECRET_KEY,
-  }
-
-  const options: RequestInit = {
-    method,
-    headers,
-  }
-
-  if (body) {
-    options.body = JSON.stringify(body)
-  }
-
-  const response = await fetch(url, options)
-  const data = await response.json()
-
-  if (!response.ok) {
-    console.error('Cashfree API error:', data)
-    throw new Error(data.message || 'Cashfree API error')
-  }
-
-  return data
-}
-
-// POST /api/payments/create-order - Create a new payment order for spinning
+// POST /api/payments/create-order - Create a new Razorpay order
 router.post(
   '/create-order',
   optionalAuth,
@@ -71,29 +41,27 @@ router.post(
         return res.status(400).json({ errors: errors.array() })
       }
 
-      const { contestId, customerInfo, returnUrl } = req.body
+      const { contestId, customerInfo } = req.body
       const userId = req.user ? req.user._id.toString() : undefined
 
-      // Check if Cashfree is configured
-      if (!isCashfreeConfigured()) {
-        console.error('Cashfree credentials not configured. Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in .env')
-        return res.status(500).json({ 
-          error: 'Payment gateway not configured. Please contact support.',
-          details: 'Missing Cashfree API credentials'
+      if (!isRazorpayConfigured()) {
+        console.error('Razorpay credentials not configured.')
+        return res.status(500).json({
+          error: 'Payment gateway not configured. Please contact support.'
         })
       }
 
-      // Get contest details - search by contestId field only
-      const contest = await Contest.findOne({ 
+      // Get contest details
+      const contest = await Contest.findOne({
         contestId: contestId.toUpperCase(),
-        isActive: true 
+        isActive: true
       })
 
       if (!contest) {
         return res.status(404).json({ error: 'Contest not found or not active' })
       }
 
-      // Create spin payment record
+      // Create spin payment record first
       const spinPayment = new SpinPayment({
         userId,
         contestId: contest.contestId,
@@ -102,49 +70,47 @@ router.post(
         customerInfo: {
           name: customerInfo.name,
           email: customerInfo.email,
-          phone: customerInfo.phone.replace(/\s/g, ''), // Remove spaces
+          phone: customerInfo.phone.replace(/\s/g, ''),
         },
       })
 
+      // Save to get the orderId (MS...)
       await spinPayment.save()
 
-      // Create Cashfree order
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
-      const orderPayload = {
-        order_id: spinPayment.orderId,
-        order_amount: contest.price,
-        order_currency: 'INR',
-        customer_details: {
-          customer_id: userId || `guest_${Date.now()}`,
-          customer_name: customerInfo.name,
-          customer_email: customerInfo.email,
-          customer_phone: customerInfo.phone.replace(/[^0-9]/g, ''), // Only digits
+      // Create Razorpay Order
+      const options = {
+        amount: Math.round(contest.price * 100), // amount in paise
+        currency: 'INR',
+        receipt: spinPayment.orderId,
+        notes: {
+          paymentId: spinPayment.paymentId, // SPIN-xxx
+          contestId: contest.contestId,
         },
-        order_meta: {
-          return_url: returnUrl || `${frontendUrl}/wheel/${contestId}?payment_id=${spinPayment.paymentId}&order_id=${spinPayment.orderId}`,
-          notify_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`,
-        },
-        order_note: `Spin payment for ${contest.name}`,
       }
 
-      const cashfreeOrder = await cashfreeRequest('/orders', 'POST', orderPayload)
+      const order = await razorpay.orders.create(options)
 
-      // Update spin payment with Cashfree details
-      spinPayment.paymentSessionId = cashfreeOrder.payment_session_id
-      spinPayment.cfOrderId = cashfreeOrder.cf_order_id
+      // Update spin payment with Razorpay Order ID
+      spinPayment.razorpayOrderId = order.id
       await spinPayment.save()
 
       res.status(201).json({
         success: true,
-        paymentId: spinPayment.paymentId,
-        orderId: spinPayment.orderId,
-        paymentSessionId: cashfreeOrder.payment_session_id,
-        orderAmount: contest.price,
-        orderCurrency: 'INR',
-        contestId: contest.contestId,
-        contestName: contest.name,
-        cfOrderId: cashfreeOrder.cf_order_id,
+        key: KEY_ID,
+        orderId: order.id, // Razorpay Order ID (starts with order_)
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Mystrix',
+        description: `Payment for ${contest.name}`,
+        prefill: {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          contact: customerInfo.phone,
+        },
+        internalOrderId: spinPayment.orderId, // MS...
+        paymentId: spinPayment.paymentId, // SPIN...
       })
+
     } catch (error) {
       console.error('Error creating payment order:', error)
       res.status(500).json({ error: 'Failed to create payment order' })
@@ -152,149 +118,64 @@ router.post(
   }
 )
 
-// GET /api/payments/verify/:orderId - Verify payment status
-router.get('/verify/:orderId', async (req: Request, res: Response) => {
+// POST /api/payments/verify - Verify Razorpay Payment Signature
+router.post('/verify', async (req: Request, res: Response) => {
   try {
-    const { orderId } = req.params
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    } = req.body
 
-    // Find the spin payment
-    const spinPayment = await SpinPayment.findOne({ orderId })
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ error: 'Missing payment details' })
+    }
 
+    // Find the payment record by Razorpay Order ID
+    const spinPayment = await SpinPayment.findOne({ razorpayOrderId: razorpay_order_id })
     if (!spinPayment) {
-      return res.status(404).json({ error: 'Payment not found' })
+      return res.status(404).json({ error: 'Payment record not found' })
     }
 
-    // If already verified, return status
-    if (spinPayment.status === 'PAID') {
-      return res.json({
-        success: true,
-        status: 'PAID',
-        paymentId: spinPayment.paymentId,
-        orderId: spinPayment.orderId,
-        contestId: spinPayment.contestId,
-        spinAllowed: spinPayment.spinAllowed,
-        spinUsed: spinPayment.spinUsed,
-      })
-    }
+    // Verify signature
+    const text = razorpay_order_id + '|' + razorpay_payment_id
+    const generated_signature = crypto
+      .createHmac('sha256', KEY_SECRET!)
+      .update(text)
+      .digest('hex')
 
-    // Verify with Cashfree
-    const orderStatus = await cashfreeRequest(`/orders/${orderId}`, 'GET')
-
-    // Update payment status based on Cashfree response
-    if (orderStatus.order_status === 'PAID') {
+    if (generated_signature === razorpay_signature) {
+      // Payment successful
       spinPayment.status = 'PAID'
       spinPayment.spinAllowed = true
       spinPayment.paidAt = new Date()
-      
-      // Get payment details
-      const payments = await cashfreeRequest(`/orders/${orderId}/payments`, 'GET')
-      if (payments && payments.length > 0) {
-        spinPayment.cfPaymentId = payments[0].cf_payment_id
-        spinPayment.paymentMethod = payments[0].payment_group
-      }
-      
+      spinPayment.razorpayPaymentId = razorpay_payment_id
+      spinPayment.razorpaySignature = razorpay_signature
+      spinPayment.paymentMethod = 'razorpay'
+
       await spinPayment.save()
 
       return res.json({
         success: true,
         status: 'PAID',
         paymentId: spinPayment.paymentId,
-        orderId: spinPayment.orderId,
         contestId: spinPayment.contestId,
-        spinAllowed: true,
-        spinUsed: spinPayment.spinUsed,
+        spinAllowed: true
       })
-    } else if (['EXPIRED', 'CANCELLED', 'TERMINATED'].includes(orderStatus.order_status)) {
-      spinPayment.status = orderStatus.order_status === 'TERMINATED' ? 'FAILED' : orderStatus.order_status
+    } else {
+      // Signature mismatch
+      spinPayment.status = 'FAILED'
       await spinPayment.save()
-
-      return res.json({
-        success: false,
-        status: spinPayment.status,
-        message: 'Payment was not completed',
-      })
+      return res.status(400).json({ error: 'Invalid payment signature' })
     }
 
-    // Still pending
-    res.json({
-      success: false,
-      status: 'PENDING',
-      message: 'Payment is still pending',
-    })
   } catch (error) {
     console.error('Error verifying payment:', error)
     res.status(500).json({ error: 'Failed to verify payment' })
   }
 })
 
-// POST /api/payments/webhook - Cashfree webhook handler
-router.post('/webhook', async (req: Request, res: Response) => {
-  try {
-    const payload = req.body
-    const signature = req.headers['x-webhook-signature'] as string
-
-    // Verify webhook signature
-    if (CASHFREE_SECRET_KEY && signature) {
-      const rawBody = JSON.stringify(payload)
-      const ts = req.headers['x-webhook-timestamp'] as string
-      const signedPayload = ts + rawBody
-      const expectedSignature = crypto
-        .createHmac('sha256', CASHFREE_SECRET_KEY)
-        .update(signedPayload)
-        .digest('base64')
-
-      if (signature !== expectedSignature) {
-        console.error('Invalid webhook signature')
-        return res.status(401).json({ error: 'Invalid signature' })
-      }
-    }
-
-    const { data, type } = payload
-
-    if (type === 'PAYMENT_SUCCESS_WEBHOOK' || type === 'ORDER_PAID') {
-      const orderId = data.order?.order_id || data.order_id
-
-      if (!orderId) {
-        console.error('No order_id in webhook payload')
-        return res.status(400).json({ error: 'Missing order_id' })
-      }
-
-      const spinPayment = await SpinPayment.findOne({ orderId })
-
-      if (!spinPayment) {
-        console.error('Spin payment not found for order:', orderId)
-        return res.status(404).json({ error: 'Payment not found' })
-      }
-
-      // Update payment status
-      spinPayment.status = 'PAID'
-      spinPayment.spinAllowed = true
-      spinPayment.paidAt = new Date()
-      spinPayment.cfPaymentId = data.payment?.cf_payment_id || data.cf_payment_id
-      spinPayment.paymentMethod = data.payment?.payment_group || data.payment_group
-      await spinPayment.save()
-
-      console.log(`Payment successful for order ${orderId}`)
-    } else if (type === 'PAYMENT_FAILED_WEBHOOK') {
-      const orderId = data.order?.order_id || data.order_id
-
-      if (orderId) {
-        const spinPayment = await SpinPayment.findOne({ orderId })
-        if (spinPayment) {
-          spinPayment.status = 'FAILED'
-          await spinPayment.save()
-        }
-      }
-    }
-
-    res.json({ success: true })
-  } catch (error) {
-    console.error('Error processing webhook:', error)
-    res.status(500).json({ error: 'Webhook processing failed' })
-  }
-})
-
-// POST /api/payments/use-spin - Mark spin as used after wheel spin
+// POST /api/payments/use-spin - Mark spin as used (Same as before)
 router.post(
   '/use-spin',
   [
@@ -370,7 +251,7 @@ router.get('/check-spin/:paymentId', async (req: Request, res: Response) => {
   }
 })
 
-// GET /api/payments/history - Get payment history (for logged-in users)
+// GET /api/payments/history - Get payment history
 router.get('/history', optionalAuth, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
@@ -408,4 +289,3 @@ router.get('/history', optionalAuth, async (req: Request, res: Response) => {
 })
 
 export default router
-
