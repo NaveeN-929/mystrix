@@ -225,6 +225,40 @@ export const statsApi = {
   getDashboard: () => request<DashboardStats>('/stats'),
 }
 
+// Payments API (Cashfree)
+export const paymentsApi = {
+  // Create a payment order for spinning the wheel
+  createOrder: (data: CreatePaymentOrderData, token?: string) =>
+    authRequest<CreatePaymentOrderResponse>('/payments/create-order', {
+      method: 'POST',
+      body: data,
+      token,
+    }),
+
+  // Verify payment status
+  verifyPayment: (orderId: string) =>
+    request<VerifyPaymentResponse>(`/payments/verify/${orderId}`),
+
+  // Check if spin is allowed for a payment
+  checkSpin: (paymentId: string) =>
+    request<CheckSpinResponse>(`/payments/check-spin/${paymentId}`),
+
+  // Mark spin as used after wheel spin
+  useSpin: (paymentId: string, wheelResult: number) =>
+    request<UseSpinResponse>('/payments/use-spin', {
+      method: 'POST',
+      body: { paymentId, wheelResult },
+    }),
+
+  // Get payment history (authenticated users)
+  getHistory: (params?: { page?: number; limit?: number }, token?: string) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.append('page', params.page.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    return authRequest<{ payments: SpinPayment[]; pagination: Pagination }>(`/payments/history?${searchParams}`, { token })
+  },
+}
+
 // Auth Types
 export interface User {
   id: string
@@ -430,5 +464,77 @@ export interface DashboardStats {
     sales: number
     revenue: number
   }>
+}
+
+// Payment Types (Cashfree)
+export interface CreatePaymentOrderData {
+  contestId: string
+  customerInfo: {
+    name: string
+    email: string
+    phone: string
+  }
+  returnUrl?: string
+}
+
+export interface CreatePaymentOrderResponse {
+  success: boolean
+  paymentId: string
+  orderId: string
+  paymentSessionId: string
+  orderAmount: number
+  orderCurrency: string
+  contestId: string
+  contestName: string
+  cfOrderId: string
+}
+
+export interface VerifyPaymentResponse {
+  success: boolean
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
+  paymentId?: string
+  orderId?: string
+  contestId?: string
+  spinAllowed?: boolean
+  spinUsed?: boolean
+  message?: string
+}
+
+export interface CheckSpinResponse {
+  paymentId: string
+  orderId: string
+  contestId: string
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
+  spinAllowed: boolean
+  spinUsed: boolean
+  wheelResult?: number
+}
+
+export interface UseSpinResponse {
+  success: boolean
+  message: string
+  wheelResult: number
+}
+
+export interface SpinPayment {
+  paymentId: string
+  orderId: string
+  userId?: string
+  contestId: string
+  contestName: string
+  amount: number
+  currency: string
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
+  spinAllowed: boolean
+  spinUsed: boolean
+  wheelResult?: number
+  customerInfo: {
+    name: string
+    email: string
+    phone: string
+  }
+  paidAt?: string
+  createdAt: string
+  updatedAt: string
 }
 

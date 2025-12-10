@@ -1,10 +1,13 @@
+import dotenv from 'dotenv'
+// Load environment variables FIRST before any other imports
+dotenv.config()
+
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
-import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 
 // Routes
@@ -14,12 +17,10 @@ import statsRoutes from './routes/stats.js'
 import contestRoutes from './routes/contests.js'
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
+import paymentRoutes from './routes/payments.js'
 
 // Models (import to register with mongoose)
 import './models/User.js'
-
-// Load environment variables
-dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -64,6 +65,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/contests', contestRoutes)
+app.use('/api/payments', paymentRoutes)
 
 // 404 handler
 app.use((req, res) => {
