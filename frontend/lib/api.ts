@@ -507,8 +507,10 @@ export interface VerifyPaymentResponse {
   success: boolean
   status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
   paymentId?: string
+  orderId?: string
   contestId?: string
   spinAllowed?: boolean
+  spinUsed?: boolean
   message?: string
 }
 
