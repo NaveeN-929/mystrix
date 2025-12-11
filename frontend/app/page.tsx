@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+// import Image from 'next/image' // Removing Image if unused or keeping if used elsewhere. It matches my previous addition.
+import Lottie from 'lottie-react'
+import giftBoxAnimation from '@/lib/animations/gift-box.json'
 import { motion } from 'framer-motion'
 import { Sparkles, Gift, Star, Heart } from 'lucide-react'
 import { ContestCard } from '@/components/ContestCard'
@@ -37,10 +40,12 @@ export default function HomePage() {
       <section className="relative px-4 pt-8 pb-16 overflow-hidden">
         {/* Floating Decorations */}
         <FloatingElement emoji="⭐" className="top-20 left-[10%]" delay={0} />
-        <FloatingElement emoji="🎀" className="top-32 right-[15%]" delay={0.5} />
+        <FloatingElement emoji="⭐" className="top-32 right-[15%]" delay={0.5} />
+        <FloatingElement emoji="✨" className="top-32 left-[25%]" delay={0.5} />
         <FloatingElement emoji="💖" className="top-48 left-[20%]" delay={1} />
         <FloatingElement emoji="✨" className="top-24 right-[25%]" delay={1.5} />
         <FloatingElement emoji="🌟" className="top-40 left-[5%]" delay={2} />
+        <FloatingElement emoji="💖" className="top-60 right-[20%]" delay={2.5} />
 
         <div className="max-w-4xl mx-auto text-center">
           {/* Animated Title */}
@@ -52,15 +57,19 @@ export default function HomePage() {
             <motion.div
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="text-6xl sm:text-7xl mb-4"
+              className="relative w-64 h-64 sm:w-80 sm:h-80 mx-auto -mb-10"
             >
-              🎁
+              <Lottie
+                animationData={giftBoxAnimation}
+                loop={true}
+                className="w-full h-full"
+              />
             </motion.div>
-            
+
             <h1 className="text-4xl sm:text-6xl font-extrabold mb-4">
               <span className="gradient-text">mystrix</span>
             </h1>
-            
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -69,7 +78,7 @@ export default function HomePage() {
             >
               Spin the wheel, unlock mystery boxes, and win amazing surprises! ✨
             </motion.p>
-            
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -148,7 +157,7 @@ export default function HomePage() {
               Choose Your Adventure 🚀
             </h2>
             <p className="text-gray-600 max-w-lg mx-auto">
-              Select a contest below and start your mystrix journey! 
+              Select a contest below and start your mystrix journey!
               Each contest offers unique rewards and excitement.
             </p>
           </motion.div>
@@ -186,10 +195,10 @@ export default function HomePage() {
               </div>
             ) : (
               contests.map((contest, index) => (
-                <ContestCard 
-                  key={contest.id} 
-                  contest={contest} 
-                  index={index} 
+                <ContestCard
+                  key={contest.id}
+                  contest={contest}
+                  index={index}
                 />
               ))
             )}
@@ -256,7 +265,7 @@ export default function HomePage() {
             Ready to Start?
           </h2>
           <p className="text-gray-600 mb-6">
-            Your next favorite product is just a spin away! 
+            Your next favorite product is just a spin away!
             Join thousands of happy winners today.
           </p>
           <motion.a
@@ -286,7 +295,7 @@ function FloatingElement({ emoji, className, delay }: { emoji: string; className
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ 
+      animate={{
         opacity: [0.5, 1, 0.5],
         y: [0, -15, 0]
       }}

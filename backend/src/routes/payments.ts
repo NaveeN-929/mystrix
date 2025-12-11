@@ -14,10 +14,20 @@ const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET
 
 console.log('Razorpay Config:', { keyId: KEY_ID, hasSecret: !!KEY_SECRET })
 
-const razorpay = new Razorpay({
-  key_id: KEY_ID,
-  key_secret: KEY_SECRET,
-})
+let razorpay: Razorpay | null = null
+
+try {
+  if (KEY_ID && KEY_SECRET) {
+    razorpay = new Razorpay({
+      key_id: KEY_ID,
+      key_secret: KEY_SECRET,
+    })
+  } else {
+    console.warn('⚠️ Razorpay credentials missing. Payments will be disabled.')
+  }
+} catch (err: unknown) {
+  console.error('Failed to initialize Razorpay:', err)
+}
 
 // Check if credentials are configured
 const isRazorpayConfigured = () => {
@@ -44,7 +54,7 @@ router.post(
       const { contestId, customerInfo } = req.body
       const userId = req.user ? req.user._id.toString() : undefined
 
-      if (!isRazorpayConfigured()) {
+      if (!razorpay || !KEY_ID) {
         console.error('Razorpay credentials not configured.')
         return res.status(500).json({
           error: 'Payment gateway not configured. Please contact support.'
@@ -88,6 +98,7 @@ router.post(
         },
       }
 
+      if (!razorpay) throw new Error('Razorpay not initialized')
       const order = await razorpay.orders.create(options)
 
       // Update spin payment with Razorpay Order ID

@@ -1,4 +1,5 @@
-// Environment loaded via --env-file
+import 'dotenv/config'
+// Environment loaded via --env-file or dotenv
 // console.log('Backend Startup - RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID)
 
 import express from 'express'
@@ -28,7 +29,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/myster
 // Security Middleware
 app.use(helmet())
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
 }))
 
