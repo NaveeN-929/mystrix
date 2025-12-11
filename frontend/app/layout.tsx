@@ -7,7 +7,7 @@ import { BackgroundEffects } from '@/components/BackgroundEffects'
 import { AuthProvider } from '@/components/AuthProvider'
 
 export const metadata: Metadata = {
-  title: 'mystrix 🎁 | Win Amazing Products!',
+  title: 'mystrix | Win Amazing Products!',
   description: 'Spin the wheel, open mystery boxes, and win amazing products! A fun and exciting shopping experience.',
   keywords: ['mystery box', 'spin wheel', 'contest', 'prizes', 'shopping'],
 }
@@ -27,7 +27,7 @@ export default function RootLayout({
         <AuthProvider>
           <BackgroundEffects />
           <Navbar />
-          
+
           <MainContent>
             {children}
           </MainContent>

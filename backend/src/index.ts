@@ -1,4 +1,5 @@
-// Environment loaded via --env-file
+import 'dotenv/config'
+// Environment loaded via --env-file or dotenv
 // console.log('Backend Startup - RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID)
 
 import express from 'express'

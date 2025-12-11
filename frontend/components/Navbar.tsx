@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -47,9 +48,15 @@ export function Navbar() {
               <motion.div
                 whileHover={{ rotate: 15, scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-3xl"
+                className="relative w-16 h-16"
               >
-                🎁
+                <Image
+                  src="/logo.png"
+                  alt="Mystrix Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </motion.div>
               <span className="font-bold text-xl gradient-text hidden sm:block">
                 mystrix
