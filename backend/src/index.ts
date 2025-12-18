@@ -28,9 +28,32 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/myster
 
 // Security Middleware
 app.use(helmet())
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'https://mystrix.in',
+    'https://www.mystrix.in',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ];
+
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked request from origin: ${origin}`);
+      callback(null, false);
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }))
 
 // Rate limiting

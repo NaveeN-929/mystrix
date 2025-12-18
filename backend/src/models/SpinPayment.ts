@@ -148,3 +148,4 @@ spinPaymentSchema.pre('save', function (next) {
 
 export const SpinPayment = mongoose.model<ISpinPayment>('SpinPayment', spinPaymentSchema)
 
+
