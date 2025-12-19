@@ -9,12 +9,14 @@ import { User, Mail, Phone, Lock, Eye, EyeOff, Sparkles, ArrowRight } from 'luci
 import { cn } from '@/lib/utils'
 import { authApi } from '@/lib/api'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { useCartStore } from '@/lib/store'
 
 function SignupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') || '/'
   const { status } = useSession()
+  const { walletRewards, clearWalletRewards } = useCartStore()
 
   const [formData, setFormData] = useState({
     name: '',
@@ -67,6 +69,7 @@ function SignupContent() {
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
+        rewardAmount: walletRewards > 0 ? walletRewards : undefined,
       })
 
       // Auto sign-in after signup
@@ -74,8 +77,13 @@ function SignupContent() {
         redirect: false,
         email: formData.email,
         password: formData.password,
+        rewardAmount: walletRewards > 0 ? walletRewards.toString() : undefined,
         callbackUrl: redirectTo,
       })
+
+      if (walletRewards > 0) {
+        clearWalletRewards()
+      }
 
       // Redirect to target
       router.push(redirectTo)

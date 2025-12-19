@@ -130,7 +130,7 @@ export const productsApi = {
   getById: (id: string) => request<{ product: Product }>(`/products/${id}`),
 
   getRandom: (count: number, contestId: string) =>
-    request<{ products: Product[] }>('/products/random', {
+    request<{ products: Product[]; boxes: Product[][] }>('/products/random', {
       method: 'POST',
       body: { count, contestId },
     }),
@@ -248,13 +248,13 @@ export const paymentsApi = {
     request<CheckSpinResponse>(`/payments/check-spin/${paymentId}`),
 
   // Mark spin as used after wheel spin
-  useSpin: (paymentId: string, wheelResult: number) =>
-    request<UseSpinResponse>('/payments/use-spin', {
+  useSpin: (paymentId: string, wheelResult: number, token?: string) =>
+    authRequest<UseSpinResponse>('/payments/use-spin', {
       method: 'POST',
       body: { paymentId, wheelResult },
+      token,
     }),
 
-  // Get payment history (authenticated users)
   getHistory: (params?: { page?: number; limit?: number }, token?: string) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
@@ -263,12 +263,25 @@ export const paymentsApi = {
   },
 }
 
+// Wallet API
+export const walletApi = {
+  getHistory: (params?: { page?: number; limit?: number }, token?: string) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.append('page', params.page.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    return authRequest<WalletHistoryResponse>(`/wallet/history?${searchParams}`, { token })
+  },
+  getBalance: (token?: string) =>
+    authRequest<{ balance: number }>('/wallet/balance', { token }),
+}
+
 // Auth Types
 export interface User {
   id: string
   name: string
   email: string
   phone: string
+  walletBalance?: number
   createdAt?: string
 }
 
@@ -300,11 +313,13 @@ export interface SignupData {
   email: string
   phone: string
   password: string
+  rewardAmount?: number
 }
 
 export interface LoginData {
   email: string
   password: string
+  rewardAmount?: number
 }
 
 export interface AdminLoginData {
@@ -339,6 +354,8 @@ export interface Product {
   description: string
   image: string
   price: number
+  c2c: number
+  rarity: 'Common' | 'Uncommon' | 'Rare' | 'Jackpot'
   contestId: string
   category?: string
   stock: number
@@ -383,6 +400,8 @@ export interface CreateProductData {
   description?: string
   image?: string
   price: number
+  c2c: number
+  rarity: string
   contestId: string
   stock?: number
 }
@@ -478,6 +497,7 @@ export interface CreatePaymentOrderData {
     email: string
     phone: string
   }
+  useWallet?: boolean
   returnUrl?: string
 }
 
@@ -496,6 +516,11 @@ export interface CreatePaymentOrderResponse {
   }
   internalOrderId: string
   paymentId: string
+  status?: string
+  discountAmount?: number
+  finalAmount?: number
+  message?: string
+  walletBalance?: number
 }
 
 export interface VerifyPaymentRequest {
@@ -513,6 +538,7 @@ export interface VerifyPaymentResponse {
   spinAllowed?: boolean
   spinUsed?: boolean
   message?: string
+  walletBalance?: number
 }
 
 export interface CheckSpinResponse {
@@ -529,6 +555,8 @@ export interface UseSpinResponse {
   success: boolean
   message: string
   wheelResult: number
+  rewardAmount?: number
+  walletBalance?: number
 }
 
 export interface SpinPayment {
@@ -538,6 +566,8 @@ export interface SpinPayment {
   contestId: string
   contestName: string
   amount: number
+  discountAmount?: number
+  finalAmount?: number
   currency: string
   status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
   spinAllowed: boolean
@@ -551,5 +581,22 @@ export interface SpinPayment {
   paidAt?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface WalletTransaction {
+  _id: string
+  userId: string
+  amount: number
+  type: 'REWARD' | 'CONTEST_PAYMENT' | 'REFUND' | 'ADMIN_ADJUSTMENT'
+  description: string
+  referenceId?: string
+  balanceAfter: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WalletHistoryResponse {
+  transactions: WalletTransaction[]
+  pagination: Pagination
 }
 

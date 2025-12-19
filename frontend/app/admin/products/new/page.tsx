@@ -22,6 +22,8 @@ interface FormData {
   description: string
   image: string
   price: string
+  c2c: string
+  rarity: string
   contestId: string
   stock: string
 }
@@ -30,6 +32,8 @@ interface FormErrors {
   productNumber?: string
   name?: string
   price?: string
+  c2c?: string
+  rarity?: string
   stock?: string
   contestId?: string
 }
@@ -46,6 +50,8 @@ export default function NewProductPage() {
     description: '',
     image: '',
     price: '',
+    c2c: '',
+    rarity: 'Common',
     contestId: '',
     stock: '10',
   })
@@ -73,44 +79,54 @@ export default function NewProductPage() {
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
-    
+
     if (!formData.productNumber) {
       newErrors.productNumber = 'Product number is required'
     } else if (parseInt(formData.productNumber) < 1 || parseInt(formData.productNumber) > 9999) {
       newErrors.productNumber = 'Must be between 1 and 9999'
     }
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Product name is required'
     }
-    
+
     if (!formData.price) {
       newErrors.price = 'Price is required'
     } else if (parseFloat(formData.price) <= 0) {
       newErrors.price = 'Price must be greater than 0'
     }
 
+    if (!formData.c2c) {
+      newErrors.c2c = 'C2C is required'
+    } else if (parseFloat(formData.c2c) < 0) {
+      newErrors.c2c = 'C2C cannot be negative'
+    }
+
+    if (!formData.rarity) {
+      newErrors.rarity = 'Rarity is required'
+    }
+
     if (!formData.contestId) {
       newErrors.contestId = 'Contest is required'
     }
-    
+
     if (!formData.stock) {
       newErrors.stock = 'Stock is required'
     } else if (parseInt(formData.stock) < 0) {
       newErrors.stock = 'Stock cannot be negative'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validate()) return
-    
+
     setIsSubmitting(true)
-    
+
     try {
       const response = await fetch('/api/products', {
         method: 'POST',
@@ -121,11 +137,13 @@ export default function NewProductPage() {
           description: formData.description.trim(),
           image: formData.image.trim(),
           price: parseFloat(formData.price),
+          c2c: parseFloat(formData.c2c),
+          rarity: formData.rarity,
           contestId: formData.contestId,
           stock: parseInt(formData.stock),
         }),
       })
-      
+
       if (response.ok) {
         setIsSuccess(true)
         setTimeout(() => {
@@ -311,11 +329,11 @@ export default function NewProductPage() {
             />
           </div>
 
-          {/* Price & Category */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Financials & Rarity */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Price (₹) *
+                MRP (₹) *
               </label>
               <input
                 type="number"
@@ -327,7 +345,7 @@ export default function NewProductPage() {
                   errors.price ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
                   'outline-none transition-colors'
                 )}
-                placeholder="299"
+                placeholder="199"
               />
               {errors.price && (
                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -336,6 +354,32 @@ export default function NewProductPage() {
                 </p>
               )}
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                C2C (Cost to Company) (₹) *
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.c2c}
+                onChange={(e) => handleChange('c2c', e.target.value)}
+                className={cn(
+                  'w-full px-4 py-3 rounded-kawaii border-2',
+                  errors.c2c ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
+                  'outline-none transition-colors'
+                )}
+                placeholder="60"
+              />
+              {errors.c2c && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {errors.c2c}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Contest *
@@ -365,6 +409,31 @@ export default function NewProductPage() {
                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                   <AlertCircle size={12} />
                   {errors.contestId}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Rarity Tier *
+              </label>
+              <select
+                value={formData.rarity}
+                onChange={(e) => handleChange('rarity', e.target.value)}
+                className={cn(
+                  'w-full px-4 py-3 rounded-kawaii border-2',
+                  errors.rarity ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
+                  'outline-none transition-colors bg-white'
+                )}
+              >
+                <option value="Common">Common</option>
+                <option value="Uncommon">Uncommon</option>
+                <option value="Rare">Rare</option>
+                <option value="Jackpot">Jackpot</option>
+              </select>
+              {errors.rarity && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {errors.rarity}
                 </p>
               )}
             </div>
@@ -485,8 +554,8 @@ export default function NewProductPage() {
           </h3>
           <ul className="text-sm text-gray-600 space-y-1">
             <li>• Use unique product numbers (1-200 recommended for mystery boxes)</li>
-            <li>• Add clear, attractive product names</li>
-            <li>• Set realistic prices based on product value</li>
+            <li>• Select Rarity and Contest for proper margin control</li>
+            <li>• C2C (Cost to Company) should include procurement & shipping</li>
             <li>• Keep stock updated to avoid overselling</li>
           </ul>
         </motion.div>

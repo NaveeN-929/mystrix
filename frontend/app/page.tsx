@@ -115,7 +115,7 @@ export default function HomePage() {
             How It Works ✨
           </motion.h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-stretch">
             <HowItWorksStep
               number={1}
               emoji="🎰"
@@ -162,7 +162,7 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
             {isLoading ? (
               // Loading skeleton
               [...Array(3)].map((_, i) => (
@@ -218,7 +218,7 @@ export default function HomePage() {
             What Our Players Say 💬
           </motion.h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
             <TestimonialCard
               name="Priya S."
               emoji="👧"
@@ -351,12 +351,12 @@ function HowItWorksStep({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay, duration: 0.5 }}
-      className="relative"
+      className="relative h-full"
     >
       <div className={cn(
-        'bg-white/80 backdrop-blur-sm rounded-super p-6',
+        'bg-white/80 backdrop-blur-sm rounded-super p-8 h-full',
         'shadow-kawaii border border-white/50',
-        'text-center'
+        'text-center flex flex-col items-center'
       )}>
         {/* Step Number */}
         <div className={cn(
@@ -372,12 +372,12 @@ function HowItWorksStep({
         <motion.div
           animate={{ scale: [1, 1.1, 1] }}
           transition={{ repeat: Infinity, duration: 2, delay: delay * 2 }}
-          className="text-4xl mb-3 mt-2"
+          className="text-4xl mb-4 mt-2"
         >
           {emoji}
         </motion.div>
         <h3 className="font-bold text-gray-800 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
       </div>
     </motion.div>
   )

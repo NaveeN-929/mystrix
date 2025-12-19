@@ -3,7 +3,9 @@ import { body, validationResult } from 'express-validator'
 import crypto from 'crypto'
 import Razorpay from 'razorpay'
 import { SpinPayment } from '../models/SpinPayment.js'
+import { WalletTransaction } from '../models/WalletTransaction.js'
 import { Contest } from '../models/Contest.js'
+import User from '../models/User.js'
 import { optionalAuth } from '../middleware/auth.js'
 
 const router = Router()
@@ -51,7 +53,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() })
       }
 
-      const { contestId, customerInfo } = req.body
+      const { contestId, customerInfo, useWallet = false } = req.body
       const userId = req.user ? req.user._id.toString() : undefined
 
       if (!razorpay || !KEY_ID) {
@@ -71,12 +73,34 @@ router.post(
         return res.status(404).json({ error: 'Contest not found or not active' })
       }
 
-      // Create spin payment record first
+      let discountAmount = 0
+      let finalAmount = contest.price
+
+      // Apply wallet balance if requested
+      if (useWallet && req.user) {
+        const user = await User.findById(req.user._id)
+        if (user && user.walletBalance > 0) {
+          discountAmount = Math.min(user.walletBalance, contest.price)
+          finalAmount = Math.max(0, contest.price - discountAmount)
+
+          // Deduct from wallet immediately
+          user.walletBalance -= discountAmount
+          await user.save()
+
+          // Create transaction record
+          // We'll update the referenceId once the payment is created below
+          console.log(`Applied ₹${discountAmount} discount from wallet for user ${req.user._id}`)
+        }
+      }
+
+      // Create spin payment record
       const spinPayment = new SpinPayment({
         userId,
         contestId: contest.contestId,
         contestName: contest.name,
         amount: contest.price,
+        discountAmount,
+        finalAmount,
         customerInfo: {
           name: customerInfo.name,
           email: customerInfo.email,
@@ -84,16 +108,47 @@ router.post(
         },
       })
 
+      // If wallet was used, record the transaction now that we have spinPayment.paymentId
+      if (discountAmount > 0 && req.user) {
+        const user = await User.findById(req.user._id);
+        await WalletTransaction.create({
+          userId: req.user._id,
+          amount: -discountAmount,
+          type: 'CONTEST_PAYMENT',
+          description: `Used wallet balance for ${contest.name}`,
+          referenceId: spinPayment.paymentId,
+          balanceAfter: user?.walletBalance || 0
+        })
+      }
+
+      // If final amount is 0, mark as PAID immediately
+      if (finalAmount === 0) {
+        spinPayment.status = 'PAID'
+        spinPayment.spinAllowed = true
+        spinPayment.paidAt = new Date()
+        spinPayment.paymentMethod = 'wallet'
+        await spinPayment.save()
+
+        return res.status(201).json({
+          success: true,
+          status: 'PAID',
+          internalOrderId: spinPayment.orderId,
+          paymentId: spinPayment.paymentId,
+          message: 'Payment covered by wallet balance',
+          walletBalance: req.user ? (await User.findById(req.user._id))?.walletBalance : undefined
+        })
+      }
+
       // Save to get the orderId (MS...)
       await spinPayment.save()
 
       // Create Razorpay Order
       const options = {
-        amount: Math.round(contest.price * 100), // amount in paise
+        amount: Math.round(finalAmount * 100), // amount in paise
         currency: 'INR',
         receipt: spinPayment.orderId,
         notes: {
-          paymentId: spinPayment.paymentId, // SPIN-xxx
+          paymentId: spinPayment.paymentId,
           contestId: contest.contestId,
         },
       }
@@ -108,7 +163,7 @@ router.post(
       res.status(201).json({
         success: true,
         key: KEY_ID,
-        orderId: order.id, // Razorpay Order ID (starts with order_)
+        orderId: order.id,
         amount: order.amount,
         currency: order.currency,
         name: 'Mystrix',
@@ -118,8 +173,11 @@ router.post(
           email: customerInfo.email,
           contact: customerInfo.phone,
         },
-        internalOrderId: spinPayment.orderId, // MS...
-        paymentId: spinPayment.paymentId, // SPIN...
+        internalOrderId: spinPayment.orderId,
+        paymentId: spinPayment.paymentId,
+        discountAmount,
+        finalAmount,
+        walletBalance: req.user ? (await User.findById(req.user._id))?.walletBalance : undefined
       })
 
     } catch (error) {
@@ -191,6 +249,7 @@ router.post('/verify', async (req: Request, res: Response) => {
 // POST /api/payments/use-spin - Mark spin as used (Same as before)
 router.post(
   '/use-spin',
+  optionalAuth,
   [
     body('paymentId').notEmpty().withMessage('Payment ID is required'),
     body('wheelResult').isNumeric().withMessage('Wheel result is required'),
@@ -224,12 +283,50 @@ router.post(
 
       spinPayment.spinUsed = true
       spinPayment.wheelResult = wheelResult
+
+      let rewardAmount = 0
+      if (wheelResult === 0) {
+        // Generate random reward between 10 and 40
+        rewardAmount = Math.floor(Math.random() * (40 - 10 + 1)) + 10
+        spinPayment.rewardAmount = rewardAmount
+
+        // If user is logged in or payment is linked to a user, add to their wallet
+        const effectiveUserId = req.user?._id || spinPayment.userId
+        if (effectiveUserId) {
+          const user = await User.findById(effectiveUserId)
+          if (user) {
+            user.walletBalance = (user.walletBalance || 0) + rewardAmount
+            await user.save()
+
+            // Create transaction record
+            await WalletTransaction.create({
+              userId: user._id,
+              amount: rewardAmount,
+              type: 'REWARD',
+              description: `Won reward from 0-box spin in ${spinPayment.contestName}`,
+              referenceId: spinPayment.paymentId,
+              balanceAfter: user.walletBalance
+            })
+            console.log(`Rewarded user ${user._id} with ₹${rewardAmount} for 0 spin. New balance: ₹${user.walletBalance}`)
+          }
+        }
+      }
+
       await spinPayment.save()
+
+      const finalEffectiveUserId = req.user?._id || spinPayment.userId
+      let updatedWalletBalance = undefined
+      if (finalEffectiveUserId) {
+        const dbUser = await User.findById(finalEffectiveUserId)
+        updatedWalletBalance = dbUser?.walletBalance
+      }
 
       res.json({
         success: true,
         message: 'Spin recorded successfully',
         wheelResult,
+        rewardAmount: rewardAmount > 0 ? rewardAmount : undefined,
+        walletBalance: updatedWalletBalance
       })
     } catch (error) {
       console.error('Error using spin:', error)

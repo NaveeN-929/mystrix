@@ -15,6 +15,7 @@ interface WheelProps {
   boxesToOpen?: number | null
   onOpenBoxes?: () => void
   onLoseContinue?: () => void
+  rewardAmount?: number | null
 }
 
 export function Wheel({
@@ -24,6 +25,7 @@ export function Wheel({
   boxesToOpen = null,
   onOpenBoxes,
   onLoseContinue,
+  rewardAmount = null,
 }: WheelProps) {
   const [isSpinning, setIsSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
@@ -54,7 +56,7 @@ export function Wheel({
   useEffect(() => {
     audioRef.current = new Audio('/sounds/spin.mp3')
     audioRef.current.volume = 0.5
-    
+
     // Try to load confetti sound, fallback to box-open2 for celebration effect
     const blastAudio = new Audio('/sounds/confetti.mp3')
     blastAudio.volume = 0.7
@@ -64,11 +66,11 @@ export function Wheel({
       blastAudioRef.current.volume = 0.7
     }
     blastAudioRef.current = blastAudio
-    
+
     // Sound for when result is 0 (no win)
     failAudioRef.current = new Audio('/sounds/spinfail.mp3')
     failAudioRef.current.volume = 0.6
-    
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
@@ -94,7 +96,7 @@ export function Wheel({
     // Play sound
     if (soundEnabled && audioRef.current) {
       audioRef.current.currentTime = 0
-      audioRef.current.play().catch(() => {})
+      audioRef.current.play().catch(() => { })
     }
 
     const spinResult = calculateSpin(segments, rotation)
@@ -111,20 +113,20 @@ export function Wheel({
       setShowWheel(false)
       setTimeout(() => {
         setShowResult(true)
-        
+
         // Play appropriate sound based on result
         if (soundEnabled) {
           if (finalResult > 0 && blastAudioRef.current) {
             // Play celebration sound for wins
             blastAudioRef.current.currentTime = 0
-            blastAudioRef.current.play().catch(() => {})
+            blastAudioRef.current.play().catch(() => { })
           } else if (finalResult === 0 && failAudioRef.current) {
             // Play different sound for no win
             failAudioRef.current.currentTime = 0
-            failAudioRef.current.play().catch(() => {})
+            failAudioRef.current.play().catch(() => { })
           }
         }
-        
+
         // Only trigger blast confetti for wins (result > 0)
         if (finalResult > 0) {
           // Trigger massive blast confetti effect
@@ -140,7 +142,7 @@ export function Wheel({
               scalar: 1.2,
               ticks: 200,
             })
-            
+
             // Left burst
             confetti({
               particleCount: 80,
@@ -151,7 +153,7 @@ export function Wheel({
               startVelocity: 40,
               gravity: 0.9,
             })
-            
+
             // Right burst
             confetti({
               particleCount: 80,
@@ -162,7 +164,7 @@ export function Wheel({
               startVelocity: 40,
               gravity: 0.9,
             })
-            
+
             // Top burst
             confetti({
               particleCount: 60,
@@ -174,7 +176,7 @@ export function Wheel({
               gravity: 1.2,
             })
           }
-          
+
           // Fire multiple bursts for dramatic effect
           triggerBlast()
           setTimeout(triggerBlast, 200)
@@ -200,12 +202,12 @@ export function Wheel({
       <AnimatePresence mode="wait">
         {/* Wheel Container - Animated out after spin */}
         {showWheel && (
-          <motion.div 
+          <motion.div
             className="wheel-container relative mb-8"
             initial={{ opacity: 1, scale: 1 }}
-            exit={{ 
-              opacity: 0, 
-              scale: 0.3, 
+            exit={{
+              opacity: 0,
+              scale: 0.3,
               rotate: 180,
               filter: 'blur(10px)'
             }}
@@ -220,11 +222,11 @@ export function Wheel({
                     <stop offset="100%" stopColor="#FF1493" />
                   </linearGradient>
                   <filter id="pointerShadow">
-                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#FF69B4" floodOpacity="0.5"/>
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#FF69B4" floodOpacity="0.5" />
                   </filter>
                 </defs>
-                <polygon 
-                  points="20,50 0,0 40,0" 
+                <polygon
+                  points="20,50 0,0 40,0"
                   fill="url(#pointerGrad)"
                   filter="url(#pointerShadow)"
                 />
@@ -247,7 +249,7 @@ export function Wheel({
             >
               <defs>
                 <filter id="wheelShadow">
-                  <feDropShadow dx="0" dy="8" stdDeviation="12" floodColor="#FFB6C1" floodOpacity="0.4"/>
+                  <feDropShadow dx="0" dy="8" stdDeviation="12" floodColor="#FFB6C1" floodOpacity="0.4" />
                 </filter>
                 {/* Gradients for each segment */}
                 {segments.map((_, i) => (
@@ -333,11 +335,11 @@ export function Wheel({
             key="result-win"
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ 
-              type: 'spring', 
-              stiffness: 200, 
+            transition={{
+              type: 'spring',
+              stiffness: 200,
               damping: 15,
-              duration: 0.8 
+              duration: 0.8
             }}
             className="mb-8 text-center relative"
           >
@@ -357,8 +359,8 @@ export function Wheel({
                 ease: 'easeInOut',
               }}
             />
-            
-            <motion.p 
+
+            <motion.p
               className="text-2xl text-gray-600 mb-4 relative z-10"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -366,9 +368,9 @@ export function Wheel({
             >
               🎊 You won 🎊
             </motion.p>
-            
+
             <motion.div
-              animate={{ 
+              animate={{
                 scale: [1, 1.1, 1],
                 textShadow: [
                   '0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(255,165,0,0.6), 0 0 60px rgba(255,140,0,0.4)',
@@ -392,7 +394,7 @@ export function Wheel({
             >
               {result}
             </motion.div>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -407,7 +409,7 @@ export function Wheel({
             >
               {result === 1 ? 'Box' : 'Boxes'}! ✨
             </motion.p>
-            
+
             {/* Sparkle particles around the number */}
             {[...Array(8)].map((_, i) => (
               <motion.div
@@ -443,15 +445,15 @@ export function Wheel({
             key="result-lose"
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ 
-              type: 'spring', 
-              stiffness: 200, 
+            transition={{
+              type: 'spring',
+              stiffness: 200,
               damping: 15,
-              duration: 0.8 
+              duration: 0.8
             }}
             className="mb-8 text-center relative"
           >
-            <motion.p 
+            <motion.p
               className="text-2xl text-gray-500 mb-4 relative z-10"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -459,9 +461,9 @@ export function Wheel({
             >
               Oh no...
             </motion.p>
-            
+
             <motion.div
-              animate={{ 
+              animate={{
                 scale: [1, 1.05, 1],
               }}
               transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
@@ -479,7 +481,7 @@ export function Wheel({
             >
               0
             </motion.div>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -488,6 +490,26 @@ export function Wheel({
             >
               Better luck next time! 🍀
             </motion.p>
+
+            {rewardAmount && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.8, type: 'spring' }}
+                className="mt-6 p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 shadow-sm relative z-10"
+              >
+                <p className="text-amber-800 font-bold flex items-center justify-center gap-2">
+                  <span className="text-2xl">🎁</span>
+                  Complementary Reward!
+                </p>
+                <p className="text-amber-600 text-sm mt-1">
+                  We&apos;ve added <span className="font-bold text-amber-700 text-lg">₹{rewardAmount}</span> to your wallet
+                </p>
+                <p className="text-xs text-amber-500 mt-2 italic">
+                  Use this for your next contest! ✨
+                </p>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

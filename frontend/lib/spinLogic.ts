@@ -18,19 +18,23 @@ export function calculateSpin(
 ): SpinResult {
   const segmentCount = segments.length
   const segmentAngle = 360 / segmentCount
-  
+
   // Random number of full rotations (5-10 spins)
   const fullRotations = Math.floor(Math.random() * 5) + 5
-  
+
   // Random winning segment
   const winningSegmentIndex = Math.floor(Math.random() * segmentCount)
-  
-  // Calculate the angle to stop at (pointer is at top, so we need to adjust)
-  const targetAngle = winningSegmentIndex * segmentAngle + segmentAngle / 2
-  
-  // Total rotation = full rotations + target angle + offset to center segment under pointer
-  const totalRotation = fullRotations * 360 + (360 - targetAngle) + 90
-  
+
+  // The center of the segment in the SVG is at:
+  // (index * segmentAngle - 90 + segmentAngle / 2)
+  // To move this point to the pointer position (-90), we need to rotate by:
+  // rotation = - (index * segmentAngle + segmentAngle / 2)
+  // For clockwise rotation: 360 - (index * segmentAngle + segmentAngle / 2)
+  const targetRotation = 360 - (winningSegmentIndex * segmentAngle + segmentAngle / 2)
+
+  // Total rotation = full rotations + target rotation
+  const totalRotation = fullRotations * 360 + targetRotation
+
   return {
     value: segments[winningSegmentIndex],
     rotation: currentRotation + totalRotation,
@@ -49,12 +53,12 @@ export function generateRandomProductNumbers(
   maxProductNumber: number = 200
 ): number[] {
   const numbers: Set<number> = new Set()
-  
+
   while (numbers.size < count) {
     const randomNum = Math.floor(Math.random() * maxProductNumber) + 1
     numbers.add(randomNum)
   }
-  
+
   return Array.from(numbers)
 }
 
@@ -94,7 +98,7 @@ export function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled
 }

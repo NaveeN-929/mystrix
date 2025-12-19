@@ -5,7 +5,9 @@ export interface IProduct extends Document {
   name: string
   description: string
   image: string
-  price: number
+  price: number // MRP
+  c2c: number // Cost to Company
+  rarity: 'Common' | 'Uncommon' | 'Rare' | 'Jackpot'
   contestId: string
   stock: number
   isActive: boolean
@@ -42,6 +44,19 @@ const productSchema = new Schema<IProduct>(
       type: Number,
       required: true,
       min: 0,
+    },
+    c2c: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    rarity: {
+      type: String,
+      required: true,
+      enum: ['Common', 'Uncommon', 'Rare', 'Jackpot'],
+      default: 'Common',
+      index: true,
     },
     contestId: {
       type: String,

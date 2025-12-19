@@ -29,6 +29,8 @@ interface ProductFormData {
   description: string
   image: string
   price: string
+  c2c: string
+  rarity: string
   contestId: string
   stock: string
 }
@@ -106,6 +108,8 @@ export default function AdminProductsPage() {
         description: formData.description,
         image: formData.image.trim(),
         price: parseFloat(formData.price),
+        c2c: parseFloat(formData.c2c),
+        rarity: formData.rarity,
         contestId: formData.contestId,
         stock: parseInt(formData.stock),
       }
@@ -115,7 +119,7 @@ export default function AdminProductsPage() {
       } else {
         await productsApi.create(productData)
       }
-      
+
       fetchProducts()
       setShowAddModal(false)
       setEditingProduct(null)
@@ -297,13 +301,24 @@ export default function AdminProductsPage() {
                         <ImageIcon size={48} />
                       </div>
                     )}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 flex flex-col gap-1">
                       <span className={cn(
                         'px-2 py-1 rounded-full text-xs font-bold',
                         'bg-gradient-to-r from-pink-400 to-purple-400 text-white'
                       )}>
                         #{product.productNumber}
                       </span>
+                      {product.rarity && (
+                        <span className={cn(
+                          'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                          product.rarity === 'Jackpot' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                            product.rarity === 'Rare' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                              product.rarity === 'Uncommon' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                'bg-gray-100 text-gray-700 border-gray-200'
+                        )}>
+                          {product.rarity}
+                        </span>
+                      )}
                     </div>
                     {!product.isActive && (
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
@@ -323,8 +338,8 @@ export default function AdminProductsPage() {
                       <span className={cn(
                         'px-2 py-0.5 rounded-full text-xs font-medium',
                         product.stock > 10 ? 'bg-green-100 text-green-700' :
-                        product.stock > 0 ? 'bg-amber-100 text-amber-700' :
-                        'bg-red-100 text-red-700'
+                          product.stock > 0 ? 'bg-amber-100 text-amber-700' :
+                            'bg-red-100 text-red-700'
                       )}>
                         {product.stock} left
                       </span>
@@ -333,7 +348,7 @@ export default function AdminProductsPage() {
                     <p className="text-sm text-gray-500 mb-2">
                       {product.contestId ? `Contest ${product.contestId}` : product.category || 'Unassigned'}
                     </p>
-                    
+
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold gradient-text">
                         {formatPrice(product.price)}
@@ -499,6 +514,8 @@ function ProductModal({
     description: product?.description || '',
     image: product?.image || '',
     price: product?.price?.toString() || '',
+    c2c: product?.c2c?.toString() || '',
+    rarity: product?.rarity || 'Common',
     contestId: product?.contestId || contests[0]?.contestId || '',
     stock: product?.stock?.toString() || '10',
   })
@@ -516,6 +533,8 @@ function ProductModal({
     if (!formData.productNumber) newErrors.productNumber = 'Required'
     if (!formData.name) newErrors.name = 'Required'
     if (!formData.price) newErrors.price = 'Required'
+    if (!formData.c2c) newErrors.c2c = 'Required'
+    if (!formData.rarity) newErrors.rarity = 'Required'
     if (!formData.contestId) newErrors.contestId = 'Required'
     if (!formData.stock) newErrors.stock = 'Required'
     setErrors(newErrors)
@@ -638,10 +657,10 @@ function ProductModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Price (₹) *
+                MRP (₹) *
               </label>
               <input
                 type="number"
@@ -652,9 +671,31 @@ function ProductModal({
                   errors.price ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
                   'outline-none transition-colors'
                 )}
-                placeholder="299"
+                placeholder="199"
               />
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                C2C (₹) *
+              </label>
+              <input
+                type="number"
+                value={formData.c2c}
+                onChange={(e) => setFormData({ ...formData, c2c: e.target.value })}
+                className={cn(
+                  'w-full px-4 py-3 rounded-kawaii border-2',
+                  errors.c2c ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
+                  'outline-none transition-colors'
+                )}
+                placeholder="60"
+              />
+              {errors.c2c && (
+                <p className="text-red-500 text-xs mt-1">{errors.c2c}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Contest *
@@ -664,7 +705,7 @@ function ProductModal({
                 onChange={(e) => setFormData({ ...formData, contestId: e.target.value })}
                 className={cn(
                   'w-full px-4 py-3 rounded-kawaii border-2',
-                  'border-pink-100 focus:border-pink-300',
+                  errors.contestId ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
                   'outline-none transition-colors bg-white'
                 )}
               >
@@ -677,6 +718,28 @@ function ProductModal({
               </select>
               {errors.contestId && (
                 <p className="text-red-500 text-xs mt-1">{errors.contestId}</p>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Rarity *
+              </label>
+              <select
+                value={formData.rarity}
+                onChange={(e) => setFormData({ ...formData, rarity: e.target.value })}
+                className={cn(
+                  'w-full px-4 py-3 rounded-kawaii border-2',
+                  errors.rarity ? 'border-red-300' : 'border-pink-100 focus:border-pink-300',
+                  'outline-none transition-colors bg-white'
+                )}
+              >
+                <option value="Common">Common</option>
+                <option value="Uncommon">Uncommon</option>
+                <option value="Rare">Rare</option>
+                <option value="Jackpot">Jackpot</option>
+              </select>
+              {errors.rarity && (
+                <p className="text-red-500 text-xs mt-1">{errors.rarity}</p>
               )}
             </div>
           </div>

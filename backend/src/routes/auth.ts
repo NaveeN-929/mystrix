@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express'
 import { body, validationResult } from 'express-validator'
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
+import { WalletTransaction } from '../models/WalletTransaction.js'
 import { generateToken, generateAdminToken, authenticateUser, getJwtSecret } from '../middleware/auth.js'
 
 const router = express.Router()
@@ -48,7 +49,7 @@ const adminLoginValidation = [
 const handleValidationErrors = (req: Request, res: Response): boolean => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
-    res.status(400).json({ 
+    res.status(400).json({
       error: 'Validation failed',
       details: errors.array().map(err => err.msg)
     })
@@ -66,11 +67,11 @@ router.post('/signup', signupValidation, async (req: Request, res: Response): Pr
   try {
     if (handleValidationErrors(req, res)) return
 
-    const { name, email, phone, password } = req.body
+    const { name, email, phone, password, rewardAmount } = req.body
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { phone }] 
+    const existingUser = await User.findOne({
+      $or: [{ email }, { phone }]
     })
 
     if (existingUser) {
@@ -85,9 +86,21 @@ router.post('/signup', signupValidation, async (req: Request, res: Response): Pr
       email,
       phone,
       password,
+      walletBalance: rewardAmount ? Number(rewardAmount) : 0
     })
 
     await user.save()
+
+    // Create transaction if reward synced
+    if (rewardAmount && rewardAmount > 0) {
+      await WalletTransaction.create({
+        userId: user._id,
+        amount: rewardAmount,
+        type: 'REWARD',
+        description: 'Synced guest rewards to wallet during signup',
+        balanceAfter: user.walletBalance
+      })
+    }
 
     // Generate token
     const token = generateToken(user._id.toString(), user.email)
@@ -99,6 +112,7 @@ router.post('/signup', signupValidation, async (req: Request, res: Response): Pr
         name: user.name,
         email: user.email,
         phone: user.phone,
+        walletBalance: user.walletBalance,
         shippingAddresses: user.shippingAddresses || [],
       },
       token,
@@ -114,7 +128,7 @@ router.post('/login', loginValidation, async (req: Request, res: Response): Prom
   try {
     if (handleValidationErrors(req, res)) return
 
-    const { email, password } = req.body
+    const { email, password, rewardAmount } = req.body
 
     // Find user with password field included
     const user = await User.findOne({ email }).select('+password')
@@ -137,6 +151,23 @@ router.post('/login', loginValidation, async (req: Request, res: Response): Prom
       return
     }
 
+    // Transfer guest reward if present
+    const rewardVal = rewardAmount ? Number(rewardAmount) : 0
+    if (rewardVal > 0) {
+      user.walletBalance = (user.walletBalance || 0) + rewardVal
+      await user.save()
+
+      // Create transaction record
+      await WalletTransaction.create({
+        userId: user._id,
+        amount: rewardVal,
+        type: 'REWARD',
+        description: 'Synced guest rewards to wallet during login',
+        balanceAfter: user.walletBalance
+      })
+      console.log(`Synced reward of ₹${rewardVal} for user ${user._id} during login`)
+    }
+
     // Generate token
     const token = generateToken(user._id.toString(), user.email)
 
@@ -147,6 +178,7 @@ router.post('/login', loginValidation, async (req: Request, res: Response): Prom
         name: user.name,
         email: user.email,
         phone: user.phone,
+        walletBalance: user.walletBalance,
         shippingAddresses: user.shippingAddresses || [],
       },
       token,
@@ -168,6 +200,7 @@ router.get('/me', authenticateUser, async (req: Request, res: Response): Promise
         name: user.name,
         email: user.email,
         phone: user.phone,
+        walletBalance: user.walletBalance,
         createdAt: user.createdAt,
         shippingAddresses: user.shippingAddresses || [],
       },
@@ -225,6 +258,7 @@ router.put('/profile', authenticateUser, [
         name: user.name,
         email: user.email,
         phone: user.phone,
+        walletBalance: user.walletBalance,
         shippingAddresses: user.shippingAddresses || [],
       },
     })
@@ -281,23 +315,23 @@ router.post('/admin/login', adminLoginValidation, async (req: Request, res: Resp
 router.get('/admin/verify', async (req: Request, res: Response): Promise<void> => {
   try {
     const authHeader = req.headers.authorization
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({ valid: false, error: 'No token provided' })
       return
     }
 
     const token = authHeader.split(' ')[1]
-    
+
     // Verify the token (will throw if invalid)
     const decoded = jwt.verify(token, getJwtSecret()) as { isAdmin: boolean; email: string }
-    
+
     if (!decoded.isAdmin) {
       res.status(403).json({ valid: false, error: 'Not an admin token' })
       return
     }
 
-    res.json({ 
+    res.json({
       valid: true,
       admin: {
         email: decoded.email,

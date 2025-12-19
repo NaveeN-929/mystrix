@@ -19,6 +19,7 @@ export interface IUser extends Document {
   password: string
   isActive: boolean
   shippingAddresses: IShippingAddress[]
+  walletBalance: number
   createdAt: Date
   updatedAt: Date
   comparePassword(candidatePassword: string): Promise<boolean>
@@ -96,6 +97,11 @@ const userSchema = new Schema<IUser>(
       type: [shippingAddressSchema],
       default: [],
     },
+    walletBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,
@@ -105,7 +111,7 @@ const userSchema = new Schema<IUser>(
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next()
-  
+
   try {
     const salt = await bcrypt.genSalt(12)
     this.password = await bcrypt.hash(this.password, salt)

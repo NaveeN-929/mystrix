@@ -18,6 +18,7 @@ import contestRoutes from './routes/contests.js'
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
 import paymentRoutes from './routes/payments.js'
+import walletRoutes from './routes/wallet.js'
 
 // Models (import to register with mongoose)
 import './models/User.js'
@@ -89,6 +90,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/contests', contestRoutes)
 app.use('/api/payments', paymentRoutes)
+app.use('/api/wallet', walletRoutes)
 
 // 404 handler
 app.use((req, res) => {

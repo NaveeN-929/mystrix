@@ -31,28 +31,16 @@ export default function BoxesPage() {
     }
 
     const boxCount = gameState.wheelResult
-    const productsPerBox = contestConfig.productsPerBox
-    const totalProducts = boxCount * productsPerBox
 
     try {
-      // Fetch products from API
-      const data = await productsApi.getRandom(totalProducts, contestConfig.id)
-      const products = data.products || []
+      // Fetch boxes from API
+      const data = await productsApi.getRandom(boxCount, contestConfig.id)
+      const boxes = data.boxes || []
 
-      if (products.length === 0) {
-        console.error('No products available')
+      if (boxes.length === 0) {
+        console.error('No boxes available')
         router.push('/')
         return
-      }
-
-      // Distribute products into boxes
-      const boxes: Product[][] = []
-      for (let i = 0; i < boxCount; i++) {
-        const boxProds = products.slice(
-          i * productsPerBox,
-          (i + 1) * productsPerBox
-        )
-        boxes.push(boxProds)
       }
 
       setBoxProducts(boxes)
@@ -153,8 +141,8 @@ export default function BoxesPage() {
         <div className={cn(
           'grid gap-6',
           totalBoxes <= 3 ? 'grid-cols-1 sm:grid-cols-3' :
-          totalBoxes <= 6 ? 'grid-cols-2 sm:grid-cols-3' :
-          'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+            totalBoxes <= 6 ? 'grid-cols-2 sm:grid-cols-3' :
+              'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
         )}>
           {boxProducts.map((products, index) => (
             <MysteryBox

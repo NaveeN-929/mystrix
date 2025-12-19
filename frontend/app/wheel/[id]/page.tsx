@@ -7,7 +7,8 @@ import { AlertCircle, CreditCard } from 'lucide-react'
 import { Wheel } from '@/components/Wheel'
 import { ContestConfig, normalizeContest } from '@/lib/contestConfig'
 import { contestsApi, paymentsApi } from '@/lib/api'
-import { useGameStore } from '@/lib/store'
+import { useGameStore, useCartStore } from '@/lib/store'
+import { useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 
@@ -32,6 +33,8 @@ function WheelContent() {
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(true)
   const { setWheelResult, initializeBoxes, markAsSpun, gameState } = useGameStore()
+  const { addWalletReward } = useCartStore()
+  const { data: session, update: updateSession } = useSession()
 
   // Verify payment on page load
   const verifyPayment = useCallback(async () => {
@@ -158,6 +161,8 @@ function WheelContent() {
     }
   }, [gameState.hasSpun, gameState.wheelResult, spinResult])
 
+  const [rewardAmount, setRewardAmount] = useState<number | null>(null)
+
   const handleSpinComplete = async (result: number) => {
     setSpinResult(result)
     setWheelResult(result)
@@ -169,7 +174,29 @@ function WheelContent() {
     // Record spin usage on backend
     if (paymentInfo?.paymentId) {
       try {
-        await paymentsApi.useSpin(paymentInfo.paymentId, result)
+        const response = await paymentsApi.useSpin(paymentInfo.paymentId, result, session?.accessToken)
+        if (response.rewardAmount !== undefined) {
+          setRewardAmount(response.rewardAmount)
+
+          if (session) {
+            // Logged in user: reward already added in backend
+            // Use the updated balance from response if provided, otherwise estimate it
+            const newBalance = response.walletBalance !== undefined
+              ? response.walletBalance
+              : ((session.user as any).walletBalance || 0) + response.rewardAmount
+
+            await updateSession({
+              user: {
+                ...session.user,
+                walletBalance: newBalance
+              }
+            })
+          } else {
+            // Guest user: save reward to cart store
+            addWalletReward(response.rewardAmount)
+            console.log(`Saved ₹${response.rewardAmount} reward to cart for guest`)
+          }
+        }
       } catch (error) {
         console.error('Error recording spin:', error)
         // Don't block the user even if recording fails
@@ -390,6 +417,7 @@ function WheelContent() {
             boxesToOpen={gameState.wheelResult}
             onOpenBoxes={handleOpenBoxes}
             onLoseContinue={spinResult === 0 ? handleLoseContinue : undefined}
+            rewardAmount={rewardAmount}
           />
         </motion.div>
 

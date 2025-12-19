@@ -11,10 +11,13 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[]
+  walletRewards: number
   addItem: (product: Product, contestType: string) => void
+  addWalletReward: (amount: number) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
   clearCart: () => void
+  clearWalletRewards: () => void
   getTotalItems: () => number
   getTotalPrice: () => number
 }
@@ -23,13 +26,14 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      
+      walletRewards: 0,
+
       addItem: (product, contestType) => {
         set((state) => {
           const existingItem = state.items.find(
             (item) => item.product._id === product._id
           )
-          
+
           if (existingItem) {
             return {
               items: state.items.map((item) =>
@@ -39,38 +43,46 @@ export const useCartStore = create<CartStore>()(
               ),
             }
           }
-          
+
           return {
             items: [...state.items, { product, quantity: 1, contestType }],
           }
         })
       },
-      
+
+      addWalletReward: (amount) => {
+        set((state) => ({
+          walletRewards: state.walletRewards + amount
+        }))
+      },
+
       removeItem: (productId) => {
         set((state) => ({
           items: state.items.filter((item) => item.product._id !== productId),
         }))
       },
-      
+
       updateQuantity: (productId, quantity) => {
         if (quantity <= 0) {
           get().removeItem(productId)
           return
         }
-        
+
         set((state) => ({
           items: state.items.map((item) =>
             item.product._id === productId ? { ...item, quantity } : item
           ),
         }))
       },
-      
-      clearCart: () => set({ items: [] }),
-      
+
+      clearCart: () => set({ items: [], walletRewards: 0 }),
+
+      clearWalletRewards: () => set({ walletRewards: 0 }),
+
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0)
       },
-      
+
       getTotalPrice: () => {
         return get().items.reduce(
           (total, item) => total + item.product.price * item.quantity,
@@ -116,7 +128,7 @@ const initialGameState: GameState = {
 
 export const useGameStore = create<GameStore>((set) => ({
   gameState: initialGameState,
-  
+
   setContest: (contest, price) => {
     set({
       gameState: {
@@ -126,7 +138,7 @@ export const useGameStore = create<GameStore>((set) => ({
       },
     })
   },
-  
+
   setWheelResult: (result) => {
     set((state) => ({
       gameState: {
@@ -135,7 +147,7 @@ export const useGameStore = create<GameStore>((set) => ({
       },
     }))
   },
-  
+
   initializeBoxes: (count) => {
     set((state) => ({
       gameState: {
@@ -144,12 +156,12 @@ export const useGameStore = create<GameStore>((set) => ({
       },
     }))
   },
-  
+
   openBox: (index) => {
     set((state) => {
       const newBoxStates = [...state.gameState.boxStates]
       newBoxStates[index] = 'opening'
-      
+
       setTimeout(() => {
         set((s) => {
           const updatedBoxStates = [...s.gameState.boxStates]
@@ -162,7 +174,7 @@ export const useGameStore = create<GameStore>((set) => ({
           }
         })
       }, 800)
-      
+
       return {
         gameState: {
           ...state.gameState,
@@ -171,7 +183,7 @@ export const useGameStore = create<GameStore>((set) => ({
       }
     })
   },
-  
+
   addRevealedProduct: (product) => {
     set((state) => ({
       gameState: {
@@ -180,11 +192,11 @@ export const useGameStore = create<GameStore>((set) => ({
       },
     }))
   },
-  
+
   resetGame: () => {
     set({ gameState: initialGameState })
   },
-  
+
   markAsSpun: () => {
     set((state) => ({
       gameState: {
@@ -194,4 +206,3 @@ export const useGameStore = create<GameStore>((set) => ({
     }))
   },
 }))
-

@@ -4,18 +4,19 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, ShoppingBag, ArrowRight, ArrowLeft, Gift } from 'lucide-react'
+import { Trash2, ShoppingBag, ArrowRight, ArrowLeft, Gift, Wallet } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { formatPrice, cn } from '@/lib/utils'
 
 export default function CartPage() {
   const router = useRouter()
   const { status } = useSession()
-  const { items, removeItem, clearCart, getTotalPrice } = useCartStore()
+  const { items, removeItem, clearCart, getTotalPrice, walletRewards, clearWalletRewards } = useCartStore()
 
   const itemsWorth = getTotalPrice()
+  const hasItems = items.length > 0 || walletRewards > 0
 
-  if (items.length === 0) {
+  if (!hasItems) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div
@@ -96,6 +97,69 @@ export default function CartPage() {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             <AnimatePresence mode="popLayout">
+              {walletRewards > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className={cn(
+                    'bg-gradient-to-br from-amber-50 to-yellow-50 rounded-super p-4 sm:p-6',
+                    'shadow-kawaii border-2 border-amber-200',
+                    'flex gap-4'
+                  )}
+                >
+                  <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 rounded-kawaii overflow-hidden bg-amber-500 flex items-center justify-center text-white shadow-inner">
+                    <Wallet size={48} className="drop-shadow-lg" />
+                    {/* Floating Sparkles effect */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                      <motion.div
+                        animate={{ y: [-10, 10, -10], opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="absolute top-2 right-2 text-yellow-200 text-xl font-bold"
+                      >✨</motion.div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h3 className="font-black text-amber-800 text-lg uppercase tracking-tight">
+                          Win Reward! 🎁
+                        </h3>
+                        <p className="text-sm text-amber-700 font-medium">
+                          Synced from your recent spin
+                        </p>
+                        <p className="text-xs text-amber-600 mt-1 italic">
+                          Login to claim this reward to your wallet
+                        </p>
+                      </div>
+
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => clearWalletRewards()}
+                        className="p-2 rounded-full text-amber-300 hover:text-amber-600 hover:bg-white transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </motion.button>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs text-amber-600 uppercase tracking-widest font-bold">Reward Value</span>
+                        <span className="text-2xl font-black text-amber-800">
+                          ₹{walletRewards}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-amber-500 uppercase tracking-wide font-bold">Status</p>
+                        <p className="text-sm font-black text-amber-600 bg-white px-2 py-0.5 rounded-full border border-amber-100 italic">Unclaimed</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {items.map((item, index) => (
                 <motion.div
                   key={item.product._id}
@@ -117,7 +181,7 @@ export default function CartPage() {
                         'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="%23f5f3ff"/><text x="75" y="80" text-anchor="middle" fill="%23a855f7" font-size="16" font-family="Arial">No Image</text></svg>'
 
                       return (
-                    <Image
+                        <Image
                           src={imageSrc}
                           alt={item.product.name}
                           fill
@@ -237,10 +301,14 @@ export default function CartPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   if (status !== 'authenticated') {
-                    router.push('/login?redirect=/checkout')
+                    router.push('/login?redirect=/cart')
                     return
                   }
-                  router.push('/checkout')
+                  if (items.length > 0) {
+                    router.push('/checkout')
+                  } else {
+                    router.push('/wallet')
+                  }
                 }}
                 className={cn(
                   'w-full py-4 rounded-kawaii',
@@ -250,8 +318,17 @@ export default function CartPage() {
                   'flex items-center justify-center gap-2'
                 )}
               >
-                Proceed to Checkout
-                <ArrowRight size={20} />
+                {items.length > 0 ? (
+                  <>
+                    Proceed to Checkout
+                    <ArrowRight size={20} />
+                  </>
+                ) : (
+                  <>
+                    Claim Reward to Wallet
+                    <ArrowRight size={20} />
+                  </>
+                )}
               </motion.button>
 
               {/* Trust Badges */}

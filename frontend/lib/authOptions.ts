@@ -27,8 +27,9 @@ export const authOptions: NextAuthOptions = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
+            email: (credentials as any).email,
+            password: (credentials as any).password,
+            rewardAmount: (credentials as any).rewardAmount ? Number((credentials as any).rewardAmount) : undefined
           }),
         })
 
@@ -48,22 +49,33 @@ export const authOptions: NextAuthOptions = {
           name: data.user.name,
           email: data.user.email,
           phone: data.user.phone,
+          walletBalance: data.user.walletBalance,
           token: data.token,
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.user = {
           id: user.id as string,
           name: user.name as string,
           email: user.email as string,
           phone: user.phone as string | undefined,
+          walletBalance: (user as any).walletBalance as number | undefined,
         }
         token.accessToken = user.token as string
       }
+
+      // Support manual updates to the session (e.g. after using wallet)
+      if (trigger === "update" && session?.user) {
+        token.user = {
+          ...token.user,
+          ...session.user
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
@@ -72,7 +84,8 @@ export const authOptions: NextAuthOptions = {
         name: token.user?.name || '',
         email: token.user?.email || '',
         phone: token.user?.phone,
-      }
+        walletBalance: token.user?.walletBalance,
+      } as any
       session.accessToken = token.accessToken as string | undefined
       return session
     },

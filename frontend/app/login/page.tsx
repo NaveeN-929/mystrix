@@ -7,13 +7,15 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn, useSession } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff, Heart, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useCartStore } from '@/lib/store'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') || '/'
   const { status } = useSession()
-  
+  const { walletRewards, clearWalletRewards } = useCartStore()
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -44,6 +46,7 @@ function LoginForm() {
         redirect: false,
         email: formData.email,
         password: formData.password,
+        rewardAmount: walletRewards > 0 ? walletRewards.toString() : undefined,
         callbackUrl: redirectTo,
       })
 
@@ -53,6 +56,9 @@ function LoginForm() {
       }
 
       // NextAuth returns a url when successful
+      if (walletRewards > 0) {
+        clearWalletRewards()
+      }
       const target = result?.url || redirectTo
       router.push(target)
     } catch (err) {
@@ -238,8 +244,8 @@ function LoginForm() {
 
         {/* Admin Link */}
         <div className="text-center mt-6">
-          <Link 
-            href="/admin/login" 
+          <Link
+            href="/admin/login"
             className="text-gray-400 text-sm hover:text-pink-500 transition-colors"
           >
             Admin Login →
