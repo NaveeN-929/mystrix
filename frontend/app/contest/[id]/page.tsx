@@ -1,30 +1,41 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles, Gift, Star, AlertCircle, CreditCard } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { ArrowRight, Sparkles, Gift, Star, AlertCircle, CreditCard, Wallet } from 'lucide-react'
 import { ContestConfig, normalizeContest } from '@/lib/contestConfig'
 import { contestsApi, paymentsApi } from '@/lib/api'
 import { useGameStore } from '@/lib/store'
-import { useAuthStore } from '@/lib/authStore'
 import { cn } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { openRazorpayCheckout } from '@/lib/razorpay'
+import { useCartStore } from '@/lib/store'
 
 export default function ContestPage() {
   const router = useRouter()
   const params = useParams()
+  const { data: session, status, update } = useSession()
+  const user = session?.user
+  const token = session?.accessToken
+
   const [contest, setContest] = useState<ContestConfig | null>(null)
   const [allContests, setAllContests] = useState<ContestConfig[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isPageLoading, setIsPageLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [useWallet, setUseWallet] = useState(false)
 
   const setContestStore = useGameStore((state) => state.setContest)
   const resetGame = useGameStore((state) => state.resetGame)
-  const { user, token } = useAuthStore()
+  const { walletRewards } = useCartStore()
+
+  const walletBalance = (user as any)?.walletBalance || 0
+  const finalPrice = useWallet ? Math.max(0, (contest?.price || 0) - walletBalance) : (contest?.price || 0)
+  const discountAmount = useWallet ? Math.min(walletBalance, (contest?.price || 0)) : 0
 
   useEffect(() => {
     async function fetchContest() {
@@ -86,9 +97,24 @@ export default function ContestPage() {
         {
           contestId: contest.id,
           customerInfo,
+          useWallet,
         },
         token || undefined
       )
+
+      // Update session if wallet was used (deduction happens on backend createOrder)
+      if (user && discountAmount > 0) {
+        const newBalance = order.walletBalance !== undefined
+          ? order.walletBalance
+          : walletBalance - discountAmount
+        await update({ user: { ...user, walletBalance: newBalance } })
+      }
+
+      // 1.5 Handle Full Wallet Payment
+      if (order.status === 'PAID') {
+        router.push(`/wheel/${contest.id}?payment_id=${order.paymentId}`)
+        return
+      }
 
       // 2. Open Razorpay Checkout
       const result = await openRazorpayCheckout({
@@ -308,6 +334,70 @@ export default function ContestPage() {
               </ul>
             </div>
 
+            {/* Guest Reward Nudge */}
+            {!user && walletRewards > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-amber-50 border-2 border-amber-100 rounded-kawaii p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-white">
+                    <Wallet size={24} />
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-sm text-amber-700 uppercase font-bold tracking-wider">Unclaimed Reward!</p>
+                    <p className="text-2xl font-black text-amber-800">₹{walletRewards}</p>
+                  </div>
+                </div>
+
+                <Link href={`/login?redirect=/contest/${contest.id}`}>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-6 py-2 bg-amber-500 text-white font-bold rounded-full shadow-sm hover:bg-amber-600 transition-colors text-sm"
+                  >
+                    Login to claim & use!
+                  </motion.button>
+                </Link>
+              </motion.div>
+            )}
+
+            {/* Wallet Section */}
+            {user && walletBalance > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-purple-50 border-2 border-purple-100 rounded-kawaii p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                    <Wallet size={24} />
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-sm text-gray-500 uppercase font-bold tracking-wider">Your Wallet</p>
+                    <p className="text-2xl font-black text-purple-600">₹{walletBalance}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-600">Use balance?</span>
+                  <button
+                    onClick={() => setUseWallet(!useWallet)}
+                    className={cn(
+                      'w-14 h-8 rounded-full transition-all duration-300 relative',
+                      useWallet ? 'bg-purple-500' : 'bg-gray-200'
+                    )}
+                  >
+                    <motion.div
+                      animate={{ x: useWallet ? 24 : 4 }}
+                      className="w-6 h-6 rounded-full bg-white absolute top-1"
+                    />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
             {/* Error Message */}
             {paymentError && (
               <motion.div
@@ -350,7 +440,7 @@ export default function ContestPage() {
               ) : (
                 <>
                   <CreditCard size={24} />
-                  Pay {contest.priceDisplay || `₹${contest.price}`} & Play Now!
+                  {finalPrice === 0 ? 'Join for FREE!' : `Pay ₹${finalPrice} & Play Now!`}
                   <ArrowRight size={24} />
                 </>
               )}

@@ -12,23 +12,30 @@ interface ContestCardProps {
 }
 
 export function ContestCard({ contest, index }: ContestCardProps) {
-  const cardContent = (
-    <>
-      {/* Glow Effect */}
-      <div
-        className={cn(
-          'absolute inset-0 rounded-super blur-xl opacity-0 group-hover:opacity-60',
-          'transition-opacity duration-500',
-          contest.id === 'A' && 'bg-pink-300',
-          contest.id === 'B' && 'bg-purple-300',
-          contest.id === 'C' && 'bg-teal-300'
-        )}
-      />
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.15, duration: 0.5 }}
+      whileHover={{ y: -10, scale: 1.02 }}
+      className="relative group h-full"
+    >
+      <Link href={`/contest/${contest.id}`} className="block h-full">
+        {/* Glow Effect */}
+        <div
+          className={cn(
+            'absolute inset-0 rounded-super blur-xl opacity-0 group-hover:opacity-60',
+            'transition-opacity duration-500',
+            contest.id === 'A' && 'bg-pink-300',
+            contest.id === 'B' && 'bg-purple-300',
+            contest.id === 'C' && 'bg-teal-300'
+          )}
+        />
 
         {/* Card */}
         <div
           className={cn(
-            'relative overflow-hidden',
+            'relative overflow-hidden h-full flex flex-col',
             'rounded-super p-6 sm:p-8',
             'border-2 border-white/50',
             'shadow-kawaii hover:shadow-kawaii-hover',
@@ -54,64 +61,67 @@ export function ContestCard({ contest, index }: ContestCardProps) {
             </motion.div>
           )}
 
-          {/* Icon */}
-          <motion.div
-            animate={{ 
-              rotate: [0, -5, 5, -5, 0],
-              y: [0, -5, 0]
-            }}
-            transition={{ 
-              duration: 2, 
-              repeat: Infinity, 
-              repeatDelay: 1,
-              delay: index * 0.3
-            }}
-            className="text-5xl sm:text-6xl mb-4"
-          >
-            {contest.icon}
-          </motion.div>
+          {/* Body Content Container (Grows to push button down) */}
+          <div className="flex-grow flex flex-col items-center text-center">
+            {/* Icon */}
+            <motion.div
+              animate={{
+                rotate: [0, -5, 5, -5, 0],
+                y: [0, -5, 0]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 1,
+                delay: index * 0.3
+              }}
+              className="text-5xl sm:text-6xl mb-4"
+            >
+              {contest.icon}
+            </motion.div>
 
-          {/* Contest Name */}
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-            {contest.name}
-          </h3>
+            {/* Contest Name */}
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
+              {contest.name}
+            </h3>
 
-          {/* Price */}
-          <div className={cn(
-            'text-3xl sm:text-4xl font-extrabold mb-3',
-            'bg-gradient-to-r bg-clip-text text-transparent',
-            contest.color
-          )}>
-            {contest.priceDisplay || `₹${contest.price}`}
-          </div>
+            {/* Price */}
+            <div className={cn(
+              'text-2xl sm:text-3xl font-extrabold mb-3',
+              'bg-gradient-to-r bg-clip-text text-transparent',
+              contest.color
+            )}>
+              {contest.priceDisplay || `₹${contest.price}`}
+            </div>
 
-          {/* Description */}
-          <p className="text-gray-600 text-sm sm:text-base mb-4">
-            {contest.description}
-          </p>
+            {/* Description */}
+            <p className="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed">
+              {contest.description}
+            </p>
 
-          {/* Features */}
-          <div className="space-y-2 mb-6">
-            <Feature 
-              icon={<Star size={16} />} 
-              text={`Wheel: ${contest.wheelRange.min}-${contest.wheelRange.max} boxes`} 
-            />
-            <Feature 
-              icon={<Gift size={16} />} 
-              text={`${contest.productsPerBox} product${contest.productsPerBox > 1 ? 's' : ''} per box`} 
-            />
-            <Feature 
-              icon={<Sparkles size={16} />} 
-              text="Surprise gifts included!" 
-            />
+            {/* Features */}
+            <div className="space-y-3 mb-8 w-full">
+              <Feature
+                icon={<Star size={16} />}
+                text={`Wheel: ${contest.wheelRange.min}-${contest.wheelRange.max} boxes`}
+              />
+              <Feature
+                icon={<Gift size={16} />}
+                text={`${contest.productsPerBox} product${contest.productsPerBox > 1 ? 's' : ''} per box`}
+              />
+              <Feature
+                icon={<Sparkles size={16} />}
+                text="Surprise gifts included!"
+              />
+            </div>
           </div>
 
           {/* CTA Button */}
-          <motion.button
+          <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className={cn(
-              'w-full py-3 px-6 rounded-kawaii',
+              'w-full py-4 px-6 rounded-kawaii',
               'text-white font-bold text-lg',
               'transition-all duration-300',
               'flex items-center justify-center gap-2',
@@ -120,7 +130,7 @@ export function ContestCard({ contest, index }: ContestCardProps) {
           >
             <Sparkles size={20} />
             Play Now
-          </motion.button>
+          </motion.div>
 
           {/* Decorative Elements */}
           <div className="absolute top-4 left-4 opacity-20">
@@ -130,19 +140,6 @@ export function ContestCard({ contest, index }: ContestCardProps) {
             <Gift className="w-6 h-6 text-purple-400 animate-bounce-slow" />
           </div>
         </div>
-    </>
-  )
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.15, duration: 0.5 }}
-      whileHover={{ y: -10, scale: 1.02 }}
-      className="relative group"
-    >
-      <Link href={`/contest/${contest.id}`}>
-        {cardContent}
       </Link>
     </motion.div>
   )

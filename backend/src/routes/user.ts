@@ -9,17 +9,18 @@ const router = Router()
 router.get('/profile', authenticateUser, async (req: Request, res: Response) => {
   try {
     const user = await User.findById(req.user!._id)
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
-    
+
     res.json({
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
         phone: user.phone,
+        walletBalance: user.walletBalance,
         shippingAddresses: user.shippingAddresses,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -45,23 +46,23 @@ router.put(
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() })
       }
-      
+
       const { name, phone } = req.body
       const updateData: Record<string, unknown> = {}
-      
+
       if (name) updateData.name = name
       if (phone) updateData.phone = phone
-      
+
       const user = await User.findByIdAndUpdate(
         req.user!._id,
         updateData,
         { new: true }
       )
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found' })
       }
-      
+
       res.json({
         message: 'Profile updated successfully',
         user: {
@@ -83,11 +84,11 @@ router.put(
 router.get('/addresses', authenticateUser, async (req: Request, res: Response) => {
   try {
     const user = await User.findById(req.user!._id)
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
-    
+
     res.json({ addresses: user.shippingAddresses })
   } catch (error) {
     console.error('Error fetching addresses:', error)
@@ -113,22 +114,22 @@ router.post(
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() })
       }
-      
+
       const { name, phone, address, city, pincode, isDefault } = req.body
-      
+
       const user = await User.findById(req.user!._id)
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found' })
       }
-      
+
       // If this is set as default, remove default from other addresses
       if (isDefault) {
         user.shippingAddresses.forEach(addr => {
           addr.isDefault = false
         })
       }
-      
+
       // Add new address
       user.shippingAddresses.push({
         name,
@@ -138,9 +139,9 @@ router.post(
         pincode,
         isDefault: isDefault || user.shippingAddresses.length === 0, // First address is default
       })
-      
+
       await user.save()
-      
+
       res.status(201).json({
         message: 'Address added successfully',
         addresses: user.shippingAddresses,
@@ -170,31 +171,31 @@ router.put(
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() })
       }
-      
+
       const { addressId } = req.params
       const { name, phone, address, city, pincode, isDefault } = req.body
-      
+
       const user = await User.findById(req.user!._id)
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found' })
       }
-      
+
       const addressToUpdate = user.shippingAddresses.find(
         addr => addr._id?.toString() === addressId
       )
-      
+
       if (!addressToUpdate) {
         return res.status(404).json({ error: 'Address not found' })
       }
-      
+
       // If setting as default, remove default from others
       if (isDefault) {
         user.shippingAddresses.forEach(addr => {
           addr.isDefault = false
         })
       }
-      
+
       // Update fields
       if (name !== undefined) addressToUpdate.name = name
       if (phone !== undefined) addressToUpdate.phone = phone
@@ -202,9 +203,9 @@ router.put(
       if (city !== undefined) addressToUpdate.city = city
       if (pincode !== undefined) addressToUpdate.pincode = pincode
       if (isDefault !== undefined) addressToUpdate.isDefault = isDefault
-      
+
       await user.save()
-      
+
       res.json({
         message: 'Address updated successfully',
         addresses: user.shippingAddresses,
@@ -220,31 +221,31 @@ router.put(
 router.delete('/addresses/:addressId', authenticateUser, async (req: Request, res: Response) => {
   try {
     const { addressId } = req.params
-    
+
     const user = await User.findById(req.user!._id)
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
-    
+
     const addressIndex = user.shippingAddresses.findIndex(
       addr => addr._id?.toString() === addressId
     )
-    
+
     if (addressIndex === -1) {
       return res.status(404).json({ error: 'Address not found' })
     }
-    
+
     const [addressToDelete] = user.shippingAddresses.splice(addressIndex, 1)
     const wasDefault = addressToDelete?.isDefault
-    
+
     // If deleted address was default, set first remaining address as default
     if (wasDefault && user.shippingAddresses.length > 0) {
       user.shippingAddresses[0].isDefault = true
     }
-    
+
     await user.save()
-    
+
     res.json({
       message: 'Address deleted successfully',
       addresses: user.shippingAddresses,

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import { ShoppingCart, Home, User } from 'lucide-react'
+import { ShoppingCart, Home, User, Wallet } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 
@@ -14,8 +14,9 @@ export function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const totalItems = useCartStore((state) => state.getTotalItems())
+  const { walletRewards } = useCartStore()
   const [isClient, setIsClient] = useState(false)
-  const cartCount = isClient ? totalItems : 0
+  const cartCount = isClient ? (totalItems + (walletRewards > 0 ? 1 : 0)) : 0
   const isAuthenticated = status === 'authenticated'
   const user = session?.user
 
@@ -79,37 +80,76 @@ export function Navbar() {
                   />
                 </div>
               ) : isAuthenticated && user ? (
-                <Link href="/profile" aria-label="Go to profile">
-                  <motion.div
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.96 }}
-                    className={cn(
-                      'flex items-center justify-center h-11 w-11 rounded-full',
-                      'bg-gradient-to-r from-pink-500 to-purple-500',
-                      'text-white font-semibold',
-                      'shadow-kawaii hover:shadow-kawaii-hover',
-                      'transition-all duration-300'
-                    )}
-                  >
-                    <User size={18} />
-                  </motion.div>
-                </Link>
+                <div className="flex items-center gap-2">
+                  {user.walletBalance !== undefined && user.walletBalance > 0 && (
+                    <Link href="/wallet">
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        whileHover={{ scale: 1.05 }}
+                        className={cn(
+                          'hidden md:flex items-center gap-2 px-4 py-2 rounded-full',
+                          'bg-amber-50 text-amber-600 border border-amber-100',
+                          'font-medium text-sm shadow-sm hover:bg-amber-100 transition-colors'
+                        )}
+                      >
+                        <Wallet size={18} className="text-amber-500" />
+                        ₹{user.walletBalance}
+                      </motion.div>
+                    </Link>
+                  )}
+                  <Link href="/profile" aria-label="Go to profile">
+                    <motion.div
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.96 }}
+                      className={cn(
+                        'flex items-center justify-center h-11 w-11 rounded-full',
+                        'bg-gradient-to-r from-pink-500 to-purple-500',
+                        'text-white font-semibold',
+                        'shadow-kawaii hover:shadow-kawaii-hover',
+                        'transition-all duration-300'
+                      )}
+                    >
+                      <User size={18} />
+                    </motion.div>
+                  </Link>
+                </div>
               ) : (
-                <Link href="/login">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-full',
-                      'bg-gradient-to-r from-pink-500 to-purple-500',
-                      'text-white font-medium',
-                      'transition-all duration-300'
-                    )}
-                  >
-                    <User size={18} />
-                    <span className="hidden sm:block">Login</span>
-                  </motion.div>
-                </Link>
+                <div className="flex items-center gap-2">
+                  {isClient && walletRewards > 0 && (
+                    <Link href="/login">
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        whileHover={{ scale: 1.05 }}
+                        className={cn(
+                          'flex items-center gap-2 px-4 py-2 rounded-full',
+                          'bg-amber-50 text-amber-600 border border-amber-100',
+                          'font-medium text-sm shadow-sm hover:bg-amber-100 transition-colors'
+                        )}
+                        title="Login to claim your rewards!"
+                      >
+                        <Wallet size={18} className="text-amber-500" />
+                        ₹{walletRewards}
+                      </motion.div>
+                    </Link>
+                  )}
+                  <Link href="/login">
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-full',
+                        'bg-gradient-to-r from-pink-500 to-purple-500',
+                        'text-white font-medium',
+                        'transition-all duration-300'
+                      )}
+                    >
+                      <User size={18} />
+                      <span className="hidden sm:block">Login</span>
+                    </motion.div>
+                  </Link>
+                </div>
               )}
             </div>
           </div>

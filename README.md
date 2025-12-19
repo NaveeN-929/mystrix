@@ -2,8 +2,6 @@
 
 A fun, gamified e-commerce experience where users spin wheels, open mystery boxes, and win amazing products!
 
-![mystrix Banner](https://picsum.photos/seed/mysteryscoop/1200/400)
-
 ## 📁 Project Structure (Monorepo)
 
 ```
@@ -35,8 +33,8 @@ mystery-scoop/
 | Contest | Price | Wheel Range | Products/Box |
 |---------|-------|-------------|--------------|
 | Starter Scoop | ₹100 | 1-5 boxes | 1 product |
-| Super Scoop | ₹299 | 1-10 boxes | 1 product |
-| Mega Scoop | ₹499 | 1-10 boxes | 2 products |
+| Super Scoop | ₹299 | 1-8 boxes | 1 product |
+| Mega Scoop | ₹499 | 1-10 boxes | 1 products |
 
 ## 🛠️ Tech Stack
 

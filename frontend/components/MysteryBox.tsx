@@ -41,7 +41,7 @@ export function MysteryBox({ index, products, isOpened, onOpen, contestType }: M
     // Play sound effect
     const audio = new Audio('/sounds/box-open.mp3')
     audio.volume = 0.5
-    audio.play().catch(() => {})
+    audio.play().catch(() => { })
 
     // Trigger confetti from box position
     setTimeout(() => {
@@ -197,18 +197,30 @@ export function MysteryBox({ index, products, isOpened, onOpen, contestType }: M
               products.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
             )}>
               <AnimatePresence mode="popLayout">
-                {products.map((product, i) => (
+                {products.length > 0 ? (
+                  products.map((product, i) => (
+                    <motion.div
+                      key={product._id}
+                      initial={{ opacity: 0, y: 20, rotateY: -90 }}
+                      animate={{ opacity: 1, y: 0, rotateY: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.3 } }}
+                      transition={{ delay: i * 0.2, type: 'spring' }}
+                      layout
+                    >
+                      <ProductCard product={product} contestType={contestType} />
+                    </motion.div>
+                  ))
+                ) : (
                   <motion.div
-                    key={product._id}
-                    initial={{ opacity: 0, y: 20, rotateY: -90 }}
-                    animate={{ opacity: 1, y: 0, rotateY: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.3 } }}
-                    transition={{ delay: i * 0.2, type: 'spring' }}
-                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-super border-2 border-dashed border-gray-200"
                   >
-                    <ProductCard product={product} contestType={contestType} />
+                    <span className="text-4xl mb-2">😢</span>
+                    <p className="font-bold text-gray-400">Empty Box</p>
+                    <p className="text-xs text-gray-400 text-center">Better luck next time! ✨</p>
                   </motion.div>
-                ))}
+                )}
               </AnimatePresence>
             </div>
           </motion.div>

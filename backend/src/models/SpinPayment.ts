@@ -7,6 +7,8 @@ export interface ISpinPayment extends Document {
   contestId: string
   contestName: string
   amount: number
+  discountAmount: number
+  finalAmount: number
   currency: string
   status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED'
   paymentMethod?: string
@@ -19,6 +21,7 @@ export interface ISpinPayment extends Document {
   spinAllowed: boolean
   spinUsed: boolean
   wheelResult?: number
+  rewardAmount?: number
   customerInfo: {
     name: string
     email: string
@@ -57,6 +60,16 @@ const spinPaymentSchema = new Schema<ISpinPayment>(
       required: true,
     },
     amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    finalAmount: {
       type: Number,
       required: true,
       min: 0,
@@ -103,6 +116,10 @@ const spinPaymentSchema = new Schema<ISpinPayment>(
     },
     wheelResult: {
       type: Number,
+    },
+    rewardAmount: {
+      type: Number,
+      default: 0,
     },
     customerInfo: {
       name: { type: String, required: true },

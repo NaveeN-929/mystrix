@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { User, Mail, Phone, Edit2, Save, X, ShoppingBag, LogOut } from 'lucide-react'
+import { User, Mail, Phone, Edit2, Save, X, ShoppingBag, LogOut, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { authApi } from '@/lib/api'
 
@@ -13,12 +14,12 @@ export default function ProfilePage() {
   const { data: session, status, update } = useSession()
   const user = session?.user
   const token = session?.accessToken
-  
+
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -51,7 +52,7 @@ export default function ProfilePage() {
       setError('You must be logged in to update your profile.')
       return
     }
-    
+
     setError('')
     setSuccess('')
     setIsLoading(true)
@@ -135,6 +136,17 @@ export default function ProfilePage() {
               <span className="text-sm font-semibold">My Orders</span>
             </button>
             <button
+              onClick={() => router.push('/wallet')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-kawaii',
+                'bg-white border border-amber-200 text-amber-600',
+                'shadow-sm hover:bg-amber-50 transition-all duration-200'
+              )}
+            >
+              <Wallet size={16} />
+              <span className="text-sm font-semibold">My Wallet</span>
+            </button>
+            <button
               onClick={handleLogout}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-kawaii',
@@ -147,6 +159,36 @@ export default function ProfilePage() {
             </button>
           </div>
         </motion.div>
+
+        {/* Wallet Balance Card */}
+        {user.walletBalance !== undefined && user.walletBalance > 0 && (
+          <Link href="/wallet">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+              transition={{ delay: 0.05 }}
+              className={cn(
+                'mb-8 bg-amber-50 border-2 border-amber-100 rounded-super p-6',
+                'flex items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all cursor-pointer'
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-soft">
+                  <Wallet size={28} />
+                </div>
+                <div>
+                  <p className="text-sm text-amber-600 font-bold uppercase tracking-wider">Available Balance</p>
+                  <p className="text-4xl font-black text-amber-700">₹{user.walletBalance}</p>
+                </div>
+              </div>
+              <div className="text-right flex flex-col items-end">
+                <p className="text-sm text-amber-500 italic hidden sm:block">Check your wallet history</p>
+                <span className="mt-2 text-xs font-black text-white bg-amber-500 px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">View History</span>
+              </div>
+            </motion.div>
+          </Link>
+        )}
 
         {/* Profile Card */}
         <motion.div
@@ -247,8 +289,8 @@ export default function ProfilePage() {
                   className={cn(
                     'w-full pl-12 pr-4 py-3 rounded-kawaii',
                     'border-2 border-pink-100',
-                    isEditing 
-                      ? 'bg-white focus:border-pink-300' 
+                    isEditing
+                      ? 'bg-white focus:border-pink-300'
                       : 'bg-gray-50 cursor-not-allowed',
                     'outline-none transition-all duration-300'
                   )}
@@ -294,8 +336,8 @@ export default function ProfilePage() {
                   className={cn(
                     'w-full pl-12 pr-4 py-3 rounded-kawaii',
                     'border-2 border-pink-100',
-                    isEditing 
-                      ? 'bg-white focus:border-pink-300' 
+                    isEditing
+                      ? 'bg-white focus:border-pink-300'
                       : 'bg-gray-50 cursor-not-allowed',
                     'outline-none transition-all duration-300'
                   )}
@@ -312,16 +354,16 @@ export default function ProfilePage() {
                 Member since:{' '}
                 {user && 'createdAt' in user && user.createdAt
                   ? new Date(user.createdAt as string).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
                   : 'Recently joined'}
               </p>
             </div>
           </div>
         </motion.div>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }
