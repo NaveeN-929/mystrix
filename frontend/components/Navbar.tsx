@@ -19,10 +19,37 @@ export function Navbar() {
   const cartCount = isClient ? (totalItems + (walletRewards > 0 ? 1 : 0)) : 0
   const isAuthenticated = status === 'authenticated'
   const user = session?.user
+  
+  // Scroll state
+  const [scrolled, setScrolled] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const [lastScrollY, setLastScrollY] = useState(0)
 
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Handle scroll behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      
+      // Make navbar compact after scrolling 100px
+      setScrolled(currentScrollY > 100)
+      
+      // Hide navbar when scrolling down, show when scrolling up
+      if (currentScrollY > lastScrollY && currentScrollY > 200) {
+        setHidden(true)
+      } else {
+        setHidden(false)
+      }
+      
+      setLastScrollY(currentScrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastScrollY])
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
@@ -37,19 +64,34 @@ export function Navbar() {
   return (
     <motion.nav
       initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-      className="fixed top-0 left-0 right-0 z-50 px-4 py-3"
+      animate={{ 
+        y: hidden ? -100 : 0,
+        transition: { type: 'spring', stiffness: 300, damping: 30 }
+      }}
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 px-4 transition-all duration-300",
+        scrolled ? "py-2" : "py-3"
+      )}
     >
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white/80 backdrop-blur-md rounded-full shadow-kawaii border border-white/50 px-6 py-3">
+        <div className={cn(
+          "transition-all duration-300",
+          scrolled 
+            ? "md:bg-white/95 md:backdrop-blur-xl md:rounded-2xl md:shadow-lg md:border md:border-white/50 md:px-4 md:py-2 px-2 py-1"
+            : "md:bg-white/80 md:backdrop-blur-md md:rounded-full md:shadow-kawaii md:border md:border-white/50 md:px-6 md:py-3 px-2 py-2"
+        )}>
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
               <motion.div
                 whileHover={{ rotate: 15, scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="relative w-16 h-16"
+                animate={{ 
+                  width: scrolled ? 48 : 64, 
+                  height: scrolled ? 48 : 64,
+                  transition: { duration: 0.3 }
+                }}
+                className="relative"
               >
                 <Image
                   src="/logo.png"
@@ -59,20 +101,27 @@ export function Navbar() {
                   priority
                 />
               </motion.div>
-              <span className="font-bold text-xl gradient-text hidden sm:block">
+              <motion.span 
+                animate={{ 
+                  fontSize: scrolled ? "1.125rem" : "1.25rem",
+                  opacity: scrolled && pathname === '/' ? 0.8 : 1,
+                  transition: { duration: 0.3 }
+                }}
+                className="font-bold gradient-text"
+              >
                 mystrix
-              </span>
+              </motion.span>
             </Link>
 
-            {/* Nav Links */}
-            <div className="flex items-center gap-2">
+            {/* Nav Links - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-2">
               {navLinks.map((link) => (
                 <NavLink key={link.href} {...link} />
               ))}
 
               {/* Auth Section */}
               {status === 'loading' ? (
-                <div className="flex items-center gap-2 px-4 py-2">
+                <div className="hidden md:flex items-center gap-2 px-4 py-2">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
@@ -80,7 +129,7 @@ export function Navbar() {
                   />
                 </div>
               ) : isAuthenticated && user ? (
-                <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2">
                   {user.walletBalance !== undefined && user.walletBalance > 0 && (
                     <Link href="/wallet">
                       <motion.div
@@ -115,7 +164,7 @@ export function Navbar() {
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2">
                   {isClient && walletRewards > 0 && (
                     <Link href="/login">
                       <motion.div

@@ -11,7 +11,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="relative z-10 mt-20 py-8 text-center">
+    <footer className="hidden md:block relative z-10 mt-8 py-8 text-center">
       <div className="flex items-center justify-center gap-2 text-pink-400">
         <span className="text-2xl">🎀</span>
         <p className="font-medium">Made with love by mystrix</p>

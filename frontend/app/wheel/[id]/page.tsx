@@ -183,7 +183,7 @@ function WheelContent() {
             // Use the updated balance from response if provided, otherwise estimate it
             const newBalance = response.walletBalance !== undefined
               ? response.walletBalance
-              : ((session.user as any).walletBalance || 0) + response.rewardAmount
+              : (session.user?.walletBalance || 0) + response.rewardAmount
 
             await updateSession({
               user: {
@@ -377,19 +377,19 @@ function WheelContent() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-8">
+    <div className="min-h-screen px-5 sm:px-4 py-6 sm:py-8 pb-24 md:pb-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-6 sm:mb-8"
         >
-          <span className="text-5xl">{contest.icon}</span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mt-4">
+          <span className="text-6xl sm:text-5xl">{contest.icon}</span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mt-4 leading-tight">
             {contest.name}
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-lg sm:text-base text-gray-600 mt-3 leading-relaxed">
             Spin the wheel to see how many mystery boxes you&apos;ll win! 🎁
           </p>
           {paymentInfo && (
@@ -405,8 +405,8 @@ function WheelContent() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           className={cn(
-            'relative bg-white/80 backdrop-blur-sm rounded-super',
-            'shadow-kawaii p-8 sm:p-12',
+            'relative bg-white/90 backdrop-blur-sm rounded-[24px]',
+            'shadow-[0_8px_32px_rgba(236,72,153,0.2)] p-6 sm:p-12',
             'flex flex-col items-center'
           )}
         >
@@ -426,7 +426,7 @@ function WheelContent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 gap-4 mt-8"
+          className="grid grid-cols-2 gap-4 mt-6 sm:mt-8"
         >
           <InfoCard
             emoji="🎯"
@@ -461,12 +461,12 @@ export default function WheelPage() {
 function InfoCard({ emoji, title, value }: { emoji: string; title: string; value: string }) {
   return (
     <div className={cn(
-      'bg-white/80 backdrop-blur-sm rounded-kawaii p-4',
-      'shadow-soft text-center'
+      'bg-white/90 backdrop-blur-sm rounded-[18px] p-5 sm:p-4',
+      'shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center'
     )}>
-      <span className="text-2xl">{emoji}</span>
-      <p className="text-sm text-gray-500 mt-1">{title}</p>
-      <p className="text-xl font-bold text-gray-800">{value}</p>
+      <span className="text-3xl sm:text-2xl">{emoji}</span>
+      <p className="text-sm sm:text-sm text-gray-500 mt-2 sm:mt-1">{title}</p>
+      <p className="text-xl sm:text-xl font-bold text-gray-800 mt-1">{value}</p>
     </div>
   )
 }

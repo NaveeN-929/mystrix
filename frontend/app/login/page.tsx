@@ -241,16 +241,6 @@ function LoginForm() {
             </motion.button>
           </Link>
         </motion.div>
-
-        {/* Admin Link */}
-        <div className="text-center mt-6">
-          <Link
-            href="/admin/login"
-            className="text-gray-400 text-sm hover:text-pink-500 transition-colors"
-          >
-            Admin Login →
-          </Link>
-        </div>
       </motion.div>
     </div>
   )

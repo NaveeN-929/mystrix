@@ -103,43 +103,99 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+      {/* How It Works Section */}
+      <section className="px-4 py-16">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-8"
+            className="text-center mb-12"
           >
-            How It Works ✨
-          </motion.h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+              How It Works ✨
+            </h2>
+            <p className="text-gray-600">Simple steps to win amazing prizes!</p>
+          </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-stretch">
-            <HowItWorksStep
-              number={1}
-              emoji="🎰"
-              title="Choose & Spin"
-              description="Pick a contest and spin the magical wheel!"
-              color="from-pink-400 to-rose-400"
-              delay={0}
-            />
-            <HowItWorksStep
-              number={2}
-              emoji="📦"
-              title="Open Boxes"
-              description="Tap mystery boxes to reveal your prizes!"
-              color="from-purple-400 to-violet-400"
-              delay={0.1}
-            />
-            <HowItWorksStep
-              number={3}
-              emoji="🎁"
-              title="Win Products"
-              description="Add amazing products to your cart!"
-              color="from-teal-400 to-emerald-400"
-              delay={0.2}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {/* Step 1: Choose & Spin */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className={cn(
+                'bg-gradient-to-br from-pink-50 to-rose-50',
+                'rounded-kawaii p-4',
+                'shadow-soft border border-pink-100',
+                'text-center hover:shadow-kawaii',
+                'transition-all duration-300'
+              )}
+            >
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                className="text-3xl mb-3"
+              >
+                🎰
+              </motion.div>
+              <h3 className="text-sm font-bold text-gray-800 mb-1">Choose & Spin</h3>
+              <p className="text-xs text-gray-600">Pick a contest and spin the magical wheel!</p>
+            </motion.div>
+
+            {/* Step 2: Open Boxes */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className={cn(
+                'bg-gradient-to-br from-purple-50 to-violet-50',
+                'rounded-kawaii p-4',
+                'shadow-soft border border-purple-100',
+                'text-center hover:shadow-kawaii',
+                'transition-all duration-300'
+              )}
+            >
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                className="text-3xl mb-3"
+              >
+                🎁
+              </motion.div>
+              <h3 className="text-sm font-bold text-gray-800 mb-1">Open Boxes</h3>
+              <p className="text-xs text-gray-600">Tap mystery boxes to reveal your prizes!</p>
+            </motion.div>
+
+            {/* Step 3: Win Products */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className={cn(
+                'bg-gradient-to-br from-teal-50 to-emerald-50',
+                'rounded-kawaii p-4',
+                'shadow-soft border border-teal-100',
+                'text-center hover:shadow-kawaii',
+                'transition-all duration-300'
+              )}
+            >
+              <motion.div
+                animate={{ 
+                  y: [0, -8, 0],
+                  rotate: [0, 5, -5, 0] 
+                }}
+                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+                className="text-3xl mb-3"
+              >
+                🎉
+              </motion.div>
+              <h3 className="text-sm font-bold text-gray-800 mb-1">Win Products</h3>
+              <p className="text-xs text-gray-600">Add amazing products to your cart!</p>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -207,7 +263,7 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="px-4 py-12">
+      <section className="hidden md:block px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <motion.h2
             initial={{ opacity: 0 }}
@@ -242,7 +298,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="px-4 py-16">
+      <section className="hidden md:block px-4 py-16">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -330,58 +386,7 @@ function StatBadge({ icon, value, label }: { icon: React.ReactNode; value: strin
   )
 }
 
-function HowItWorksStep({
-  number,
-  emoji,
-  title,
-  description,
-  color,
-  delay,
-}: {
-  number: number
-  emoji: string
-  title: string
-  description: string
-  color: string
-  delay: number
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay, duration: 0.5 }}
-      className="relative h-full"
-    >
-      <div className={cn(
-        'bg-white/80 backdrop-blur-sm rounded-super p-8 h-full',
-        'shadow-kawaii border border-white/50',
-        'text-center flex flex-col items-center'
-      )}>
-        {/* Step Number */}
-        <div className={cn(
-          'absolute -top-3 left-1/2 -translate-x-1/2',
-          'w-8 h-8 rounded-full',
-          'flex items-center justify-center',
-          'text-white font-bold text-sm',
-          `bg-gradient-to-r ${color}`
-        )}>
-          {number}
-        </div>
 
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 2, delay: delay * 2 }}
-          className="text-4xl mb-4 mt-2"
-        >
-          {emoji}
-        </motion.div>
-        <h3 className="font-bold text-gray-800 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
-      </div>
-    </motion.div>
-  )
-}
 
 function TestimonialCard({
   name,
