@@ -58,7 +58,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-8">
+    <div className="min-h-screen px-5 sm:px-4 py-6 sm:py-8 pb-32 md:pb-20">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Navbar } from '@/components/Navbar'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { Footer } from '@/components/Footer'
 import { MainContent } from '@/components/MainContent'
 import { BackgroundEffects } from '@/components/BackgroundEffects'
@@ -33,6 +34,7 @@ export default function RootLayout({
           </MainContent>
 
           <Footer />
+          <MobileBottomNav />
         </AuthProvider>
       </body>
     </html>

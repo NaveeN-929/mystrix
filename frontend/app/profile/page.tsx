@@ -123,40 +123,49 @@ export default function ProfilePage() {
           <p className="text-gray-500 mt-2">Manage your account information 🎀</p>
 
           {/* Quick actions */}
-          <div className="flex flex-wrap justify-center gap-3">
-            <button
+          <div className="flex flex-wrap justify-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/orders')}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-kawaii',
-                'bg-white border border-pink-200 text-pink-600',
-                'shadow-sm hover:bg-pink-50 transition-all duration-200'
+                'flex items-center gap-3 px-6 py-3 rounded-2xl',
+                'bg-white border-2 border-pink-200 text-pink-600',
+                'shadow-lg hover:shadow-xl transition-all duration-300',
+                'min-w-[130px] justify-center'
               )}
             >
-              <ShoppingBag size={16} />
-              <span className="text-sm font-semibold">My Orders</span>
-            </button>
-            <button
+              <ShoppingBag size={18} />
+              <span className="font-semibold text-sm">My Orders</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/wallet')}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-kawaii',
-                'bg-white border border-amber-200 text-amber-600',
-                'shadow-sm hover:bg-amber-50 transition-all duration-200'
+                'flex items-center gap-3 px-6 py-3 rounded-2xl',
+                'bg-white border-2 border-amber-200 text-amber-600',
+                'shadow-lg hover:shadow-xl transition-all duration-300',
+                'min-w-[130px] justify-center'
               )}
             >
-              <Wallet size={16} />
-              <span className="text-sm font-semibold">My Wallet</span>
-            </button>
-            <button
+              <Wallet size={18} />
+              <span className="font-semibold text-sm">My Wallet</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleLogout}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-kawaii',
+                'flex items-center gap-3 px-6 py-3 rounded-2xl',
                 'bg-gradient-to-r from-pink-500 to-purple-500 text-white',
-                'shadow-kawaii hover:shadow-kawaii-hover transition-all duration-200'
+                'shadow-lg hover:shadow-xl transition-all duration-300',
+                'min-w-[130px] justify-center'
               )}
             >
-              <LogOut size={16} />
-              <span className="text-sm font-semibold">Logout</span>
-            </button>
+              <LogOut size={18} />
+              <span className="font-semibold text-sm">Logout</span>
+            </motion.button>
           </div>
         </motion.div>
 
@@ -178,13 +187,18 @@ export default function ProfilePage() {
                   <Wallet size={28} />
                 </div>
                 <div>
-                  <p className="text-sm text-amber-600 font-bold uppercase tracking-wider">Available Balance</p>
                   <p className="text-4xl font-black text-amber-700">₹{user.walletBalance}</p>
                 </div>
               </div>
-              <div className="text-right flex flex-col items-end">
-                <p className="text-sm text-amber-500 italic hidden sm:block">Check your wallet history</p>
-                <span className="mt-2 text-xs font-black text-white bg-amber-500 px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">View History</span>
+              <div className="flex items-center">
+                <motion.div 
+                  whileHover={{ scale: 1.1, x: 5 }}
+                  className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </motion.div>
               </div>
             </motion.div>
           </Link>

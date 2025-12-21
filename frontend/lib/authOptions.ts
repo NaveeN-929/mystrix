@@ -17,6 +17,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        rewardAmount: { label: 'Reward Amount', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -27,9 +28,9 @@ export const authOptions: NextAuthOptions = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: (credentials as any).email,
-            password: (credentials as any).password,
-            rewardAmount: (credentials as any).rewardAmount ? Number((credentials as any).rewardAmount) : undefined
+            email: credentials?.email,
+            password: credentials?.password,
+            rewardAmount: credentials.rewardAmount ? Number(credentials.rewardAmount) : undefined
           }),
         })
 
@@ -63,7 +64,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name as string,
           email: user.email as string,
           phone: user.phone as string | undefined,
-          walletBalance: (user as any).walletBalance as number | undefined,
+          walletBalance: user.walletBalance,
         }
         token.accessToken = user.token as string
       }
@@ -85,7 +86,13 @@ export const authOptions: NextAuthOptions = {
         email: token.user?.email || '',
         phone: token.user?.phone,
         walletBalance: token.user?.walletBalance,
-      } as any
+      } as {
+        id: string;
+        name: string;
+        email: string;
+        phone?: string;
+        walletBalance?: number;
+      }
       session.accessToken = token.accessToken as string | undefined
       return session
     },

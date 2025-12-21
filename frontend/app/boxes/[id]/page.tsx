@@ -102,7 +102,7 @@ export default function BoxesPage() {
   const totalBoxes = openedBoxes.length
 
   return (
-    <div className="min-h-screen px-4 py-8">
+    <div className="min-h-screen px-5 sm:px-4 py-6 sm:py-8 pb-32 md:pb-20">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -164,10 +164,11 @@ export default function BoxesPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
               className={cn(
-                'fixed bottom-0 left-0 right-0 z-40',
+                'fixed left-0 right-0 z-30',
+                'bottom-20 md:bottom-0',
                 'bg-white/95 backdrop-blur-md',
                 'border-t-2 border-pink-100',
-                'shadow-kawaii-hover',
+                'shadow-[0_-4px_24px_rgba(236,72,153,0.2)]',
                 'p-4 sm:p-6'
               )}
             >
@@ -238,10 +239,11 @@ export default function BoxesPage() {
             whileTap={{ scale: 0.9 }}
             onClick={() => router.push('/cart')}
             className={cn(
-              'fixed bottom-6 right-6 z-40',
+              'fixed z-30',
+              'bottom-24 right-6 md:bottom-6 md:right-6',
               'w-16 h-16 rounded-full',
               'bg-gradient-to-r from-pink-500 to-purple-500',
-              'shadow-glow-pink',
+              'shadow-[0_8px_32px_rgba(236,72,153,0.4)]',
               'flex items-center justify-center',
               'text-white'
             )}

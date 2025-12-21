@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Wallet, ArrowLeft, ArrowUpRight, ArrowDownLeft, History, Gift, CreditCard, Sparkles } from 'lucide-react'
+import { Wallet, ArrowLeft, ArrowUpRight, ArrowDownLeft, History, CreditCard, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { walletApi, WalletTransaction } from '@/lib/api'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
@@ -109,12 +109,11 @@ export default function WalletPage() {
 
                     <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/30 shadow-inner">
-                                <Wallet size={40} className="text-white" />
+                            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/30 shadow-inner">
+                                <Wallet size={32} className="text-white" />
                             </div>
                             <div className="text-center sm:text-left">
-                                <p className="text-pink-100 font-bold uppercase tracking-widest text-sm mb-1">Available Balance</p>
-                                <p className="text-6xl font-black">₹{balance}</p>
+                                <p className="text-4xl font-black">₹{balance}</p>
                             </div>
                         </div>
 

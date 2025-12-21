@@ -17,7 +17,7 @@ import { useCartStore } from '@/lib/store'
 export default function ContestPage() {
   const router = useRouter()
   const params = useParams()
-  const { data: session, status, update } = useSession()
+  const { data: session, update } = useSession()
   const user = session?.user
   const token = session?.accessToken
 
@@ -33,7 +33,7 @@ export default function ContestPage() {
   const resetGame = useGameStore((state) => state.resetGame)
   const { walletRewards } = useCartStore()
 
-  const walletBalance = (user as any)?.walletBalance || 0
+  const walletBalance = user?.walletBalance || 0
   const finalPrice = useWallet ? Math.max(0, (contest?.price || 0) - walletBalance) : (contest?.price || 0)
   const discountAmount = useWallet ? Math.min(walletBalance, (contest?.price || 0)) : 0
 
