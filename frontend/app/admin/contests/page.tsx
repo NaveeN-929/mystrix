@@ -32,6 +32,8 @@ interface ContestFormData {
   icon: string
   badge: string
   maxSpinsPerUser: string
+  minValueFor1Box: string
+  minValueFor2Boxes: string
 }
 
 export default function AdminContestsPage() {
@@ -96,6 +98,8 @@ export default function AdminContestsPage() {
         icon: formData.icon,
         badge: formData.badge,
         maxSpinsPerUser: parseInt(formData.maxSpinsPerUser) || 1,
+        minValueFor1Box: parseFloat(formData.minValueFor1Box) || 0,
+        minValueFor2Boxes: parseFloat(formData.minValueFor2Boxes) || 0,
       }
 
       if (editingContest) {
@@ -269,6 +273,26 @@ export default function AdminContestsPage() {
                       <span>Max Spins:</span>
                       <span className="font-medium">{contest.maxSpinsPerUser}</span>
                     </div>
+                    {((contest.minValueFor1Box && contest.minValueFor1Box > 0) || (contest.minValueFor2Boxes && contest.minValueFor2Boxes > 0)) && (
+                      <>
+                        <hr className="border-gray-300" />
+                        <div className="text-xs">
+                          <div className="font-medium text-amber-700 mb-1"> Value Guarantees</div>
+                          {contest.minValueFor1Box && contest.minValueFor1Box > 0 && (
+                            <div className="flex justify-between">
+                              <span>1 Box Min:</span>
+                              <span className="font-medium">₹{contest.minValueFor1Box}</span>
+                            </div>
+                          )}
+                          {contest.minValueFor2Boxes && contest.minValueFor2Boxes > 0 && (
+                            <div className="flex justify-between">
+                              <span>2 Boxes Min:</span>
+                              <span className="font-medium">₹{contest.minValueFor2Boxes}</span>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <p className="text-sm text-gray-500 text-center mb-4">
@@ -414,6 +438,8 @@ function ContestModal({
     icon: contest?.icon || '🎁',
     badge: contest?.badge || '',
     maxSpinsPerUser: contest?.maxSpinsPerUser?.toString() || '1',
+    minValueFor1Box: contest?.minValueFor1Box?.toString() || '0',
+    minValueFor2Boxes: contest?.minValueFor2Boxes?.toString() || '0',
   })
 
   const [errors, setErrors] = useState<Partial<ContestFormData>>({})
@@ -662,6 +688,68 @@ function ContestModal({
             <p className="text-xs text-gray-400 mt-1">
               Number of times a user can spin the wheel in this contest
             </p>
+          </div>
+
+          {/* Minimum Product Value Configuration */}
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-kawaii p-6 border border-amber-200">
+            <h3 className="text-lg font-bold text-amber-800 mb-2 flex items-center gap-2">
+              Value Guarantee Settings
+            </h3>
+            <p className="text-sm text-amber-700 mb-4">
+              Set minimum product values (based on C2C cost) to ensure customers get good value when wheel lands on 1 or 2 boxes. 
+              The system selects products with C2C values that meet or exceed these minimums.
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Min Value for 1 Box (₹)
+                </label>
+                <input
+                  type="number"
+                  value={formData.minValueFor1Box}
+                  onChange={(e) => setFormData({ ...formData, minValueFor1Box: e.target.value })}
+                  className={cn(
+                    'w-full px-4 py-3 rounded-kawaii border-2',
+                    'border-amber-200 focus:border-amber-400',
+                    'outline-none transition-colors'
+                  )}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                />
+                <p className="text-xs text-amber-600 mt-1">
+                  Min C2C value when wheel lands on 1 box
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Min Value for 2 Boxes (₹)
+                </label>
+                <input
+                  type="number"
+                  value={formData.minValueFor2Boxes}
+                  onChange={(e) => setFormData({ ...formData, minValueFor2Boxes: e.target.value })}
+                  className={cn(
+                    'w-full px-4 py-3 rounded-kawaii border-2',
+                    'border-amber-200 focus:border-amber-400',
+                    'outline-none transition-colors'
+                  )}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                />
+                <p className="text-xs text-amber-600 mt-1">
+                  Min total C2C value when wheel lands on 2 boxes
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-amber-100 rounded-lg">
+              <p className="text-xs text-amber-800">
+                <strong>Example:</strong> For ₹100 contest, set ₹50 for 1 box and ₹60 for 2 boxes (based on C2C cost).
+              </p>
+            </div>
           </div>
 
           <div>

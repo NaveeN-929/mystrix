@@ -16,6 +16,9 @@ export interface IContest extends Document {
   badge?: string
   isActive: boolean
   maxSpinsPerUser: number
+  // Minimum product values for wheel positions 1 and 2
+  minValueFor1Box?: number
+  minValueFor2Boxes?: number
   createdAt: Date
   updatedAt: Date
 }
@@ -78,6 +81,16 @@ const contestSchema = new Schema<IContest>(
       type: Number,
       default: 1,
       min: 1,
+    },
+    minValueFor1Box: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    minValueFor2Boxes: {
+      type: Number,
+      min: 0,
+      default: 0,
     },
   },
   {

@@ -11,7 +11,7 @@ import { contestsApi, paymentsApi } from '@/lib/api'
 import { useGameStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { openRazorpayCheckout } from '@/lib/razorpay'
+import { openRazorpayCheckout, PaymentCancelledError } from '@/lib/razorpay'
 import { useCartStore } from '@/lib/store'
 
 export default function ContestPage() {
@@ -144,6 +144,20 @@ export default function ContestPage() {
 
     } catch (error) {
       console.error('Payment error:', error)
+      
+      // Handle payment cancellation gracefully
+      if (error instanceof PaymentCancelledError) {
+        console.log('Payment was cancelled by user')
+        // Show a brief informational message and reset loading state
+        setPaymentError('Payment was cancelled. You can try again anytime.')
+        setIsLoading(false)
+        // Clear the message after 3 seconds
+        setTimeout(() => {
+          setPaymentError(null)
+        }, 3000)
+        return
+      }
+      
       setPaymentError(
         error instanceof Error ? error.message : 'Something went wrong. Please try again.'
       )
@@ -448,7 +462,7 @@ export default function ContestPage() {
 
             <p className="text-center text-gray-400 text-sm mt-4 flex items-center justify-center gap-2">
               <span className="text-lg">🔒</span>
-              Powered by Cashfree • UPI • Cards • Netbanking
+              Powered by Razorpay
             </p>
           </div>
         </motion.div>
