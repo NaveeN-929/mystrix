@@ -37,7 +37,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     'https://mystrix.in',
     'https://www.mystrix.in',
     'http://localhost:3000',
-    'http://127.0.0.1:3000'
+    'http://127.0.0.1:3000',
+    'https://api.razorpay.com',
+    'https://checkout.razorpay.com'
   ];
 
 app.use(cors({
@@ -60,14 +62,25 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // More lenient in development
   message: { error: 'Too many requests, please try again later.' },
+  skip: (req) => {
+    // Skip rate limiting for localhost in development
+    if (process.env.NODE_ENV !== 'production') {
+      const ip = req.ip || req.connection.remoteAddress
+      return ip === '127.0.0.1' || ip === '::1' || ip?.startsWith('192.168.') || ip?.startsWith('10.') || ip === '::ffff:127.0.0.1'
+    }
+    return false
+  }
 })
 app.use('/api/', limiter)
 
 // Body parsing
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true }))
+
+// Static files (serve frontend assets if needed)
+app.use(express.static('public'))
 
 // Compression
 app.use(compression())

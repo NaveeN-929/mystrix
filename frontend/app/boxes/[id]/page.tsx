@@ -31,10 +31,11 @@ export default function BoxesPage() {
     }
 
     const boxCount = gameState.wheelResult
+    const wheelResult = gameState.wheelResult
 
     try {
-      // Fetch boxes from API
-      const data = await productsApi.getRandom(boxCount, contestConfig.id)
+      // Fetch boxes from API with wheel result for proper product selection
+      const data = await productsApi.getRandom(boxCount, contestConfig.id, wheelResult)
       const boxes = data.boxes || []
 
       if (boxes.length === 0) {

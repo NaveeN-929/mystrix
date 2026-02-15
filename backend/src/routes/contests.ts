@@ -68,7 +68,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() })
       }
       
-      const { contestId, name, price, wheelRange, productsPerBox, description, color, gradient, icon, badge, maxSpinsPerUser } = req.body
+      const { contestId, name, price, wheelRange, productsPerBox, description, color, gradient, icon, badge, maxSpinsPerUser, minValueFor1Box, minValueFor2Boxes } = req.body
       
       // Check if contest ID exists
       const existing = await Contest.findOne({ contestId: contestId.toUpperCase() })
@@ -89,6 +89,8 @@ router.post(
         badge: badge || '',
         isActive: true,
         maxSpinsPerUser: maxSpinsPerUser || 1,
+        minValueFor1Box: minValueFor1Box || 0,
+        minValueFor2Boxes: minValueFor2Boxes || 0,
       })
       
       await contest.save()

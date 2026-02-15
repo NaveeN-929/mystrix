@@ -1,6 +1,6 @@
 // API Client for communicating with backend
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 console.log('API_URL:', API_URL) // Debug log
 
 interface RequestOptions {
@@ -27,7 +27,7 @@ const getStoredToken = (type: 'user' | 'admin' = 'user'): string | null => {
   return null
 }
 
-async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(endpoint: string, options: RequestOptions = {}, retryCount = 0): Promise<T> {
   const { method = 'GET', body, headers = {}, token } = options
 
   const config: RequestInit = {
@@ -47,14 +47,45 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     config.body = JSON.stringify(body)
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, config)
+  const fullUrl = `${API_URL}${endpoint}`
+  
+  try {
+    const response = await fetch(fullUrl, config)
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }))
-    throw new Error(error.error || error.message || `HTTP error! status: ${response.status}`)
+    if (!response.ok) {
+      // Handle rate limit errors with retry
+      if (response.status === 429 && retryCount < 3) {
+        const retryAfter = response.headers.get('Retry-After')
+        const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, retryCount) * 1000
+        
+        console.warn(`Rate limited, retrying after ${delay}ms... (attempt ${retryCount + 1}/3)`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return request<T>(endpoint, options, retryCount + 1)
+      }
+
+      const error = await response.json().catch(() => ({ message: 'Request failed' }))
+      
+      // More specific error messages
+      if (response.status === 429) {
+        throw new Error('Too many requests. Please wait a moment before trying again.')
+      } else if (response.status === 500) {
+        throw new Error('Server error. Please try again later.')
+      } else if (response.status === 404) {
+        throw new Error('Resource not found.')
+      }
+      
+      throw new Error(error.error || error.message || `Request failed with status: ${response.status}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    if (retryCount === 0) {
+      console.error('API request failed:', error)
+      console.error('Full URL:', fullUrl)
+      console.error('Method:', method)
+    }
+    throw error
   }
-
-  return response.json()
 }
 
 // Authenticated request helper
@@ -129,10 +160,10 @@ export const productsApi = {
 
   getById: (id: string) => request<{ product: Product }>(`/products/${id}`),
 
-  getRandom: (count: number, contestId: string) =>
+  getRandom: (count: number, contestId: string, wheelResult?: number) =>
     request<{ products: Product[]; boxes: Product[][] }>('/products/random', {
       method: 'POST',
-      body: { count, contestId },
+      body: { count, contestId, wheelResult },
     }),
 
   create: (data: CreateProductData) =>
@@ -444,6 +475,8 @@ export interface Contest {
   badge?: string
   isActive: boolean
   maxSpinsPerUser: number
+  minValueFor1Box?: number
+  minValueFor2Boxes?: number
   createdAt: string
   updatedAt: string
 }
@@ -463,6 +496,8 @@ export interface CreateContestData {
   icon?: string
   badge?: string
   maxSpinsPerUser?: number
+  minValueFor1Box?: number
+  minValueFor2Boxes?: number
   isActive?: boolean
 }
 

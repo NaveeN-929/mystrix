@@ -17,6 +17,8 @@ export interface ContestConfig {
   badge?: string
   isActive?: boolean
   maxSpinsPerUser?: number
+  minValueFor1Box?: number
+  minValueFor2Boxes?: number
 }
 
 // Default contests (used as fallback when API is unavailable)
@@ -93,6 +95,8 @@ export function normalizeContest(apiContest: Contest): ContestConfig {
     badge: apiContest.badge,
     isActive: apiContest.isActive,
     maxSpinsPerUser: apiContest.maxSpinsPerUser || 1,
+    minValueFor1Box: apiContest.minValueFor1Box || 0,
+    minValueFor2Boxes: apiContest.minValueFor2Boxes || 0,
   }
 }
 

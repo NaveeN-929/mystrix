@@ -48,6 +48,13 @@ export interface RazorpaySuccessResponse {
     razorpay_signature: string
 }
 
+export class PaymentCancelledError extends Error {
+    constructor(message: string = 'Payment cancelled by user') {
+        super(message)
+        this.name = 'PaymentCancelledError'
+    }
+}
+
 export const openRazorpayCheckout = async (
     orderData: RazorpayOrderData
 ): Promise<RazorpaySuccessResponse> => {
@@ -74,7 +81,7 @@ export const openRazorpayCheckout = async (
             },
             modal: {
                 ondismiss: function () {
-                    reject(new Error('Payment cancelled by user'))
+                    reject(new PaymentCancelledError())
                 },
             },
         }
